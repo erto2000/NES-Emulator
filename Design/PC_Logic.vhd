@@ -28,29 +28,19 @@ architecture Behavioral of PC_Logic is
     signal PCLC: std_logic;
     signal PCL_SUM: std_logic_vector(DATA_WIDTH downto 0);
 begin
-    process(PCL) begin
-        if(PCL_PCL = '1') then
-            PCLS <= PCL;
-        elsif(ADL_PCL = '1') then
-            PCLS <= ADL;
-        else
-            PCLS <= PCL;
-        end if;
+    PCLS <= PCL when PCL_PCL = '1' else
+            ADL when ADL_PCL = '1' else
+            PCL;
             
-        if(PCH_PCH = '1') then
-            PCHS <= PCH;
-        elsif(ADH_PCH = '1') then
-            PCHS <= ADH;
-        else
-            PCHS <= PCH;            
-        end if;
-        
-        PCL_SUM <= ('0' & PCLS) + I_PC;
-        PCLC <= PCL_SUM(DATA_WIDTH);
-        PCL_Logic_Output <= PCL_SUM(DATA_WIDTH-1 downto 0);
-       
-        PCH_Logic_Output <= PCHS + PCLC;    
-    end process;
+    PCHS <= PCH when PCH_PCH = '1' else
+            ADH when ADH_PCH = '1' else
+            PCH;
+
+    PCL_SUM <= ('0' & PCLS) + I_PC;
+    PCLC <= PCL_SUM(DATA_WIDTH);
+    PCL_Logic_Output <= PCL_SUM(DATA_WIDTH-1 downto 0);
+   
+    PCH_Logic_Output <= PCHS + PCLC;  
 end Behavioral;
 
 
