@@ -8,26 +8,23 @@ entity Decoder is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk_ph2:       in std_logic;
-        rdy:                in std_logic;
-        irq_flag, nmi_flag: in std_logic;
-        sv:                 in std_logic;
-        IR:                 in std_logic_vector(DATA_WIDTH-1 downto 0);
-        cycle:              in integer range 0 to 7;
-        cycle_increment:    out std_logic;
-        cycle_reset:        out std_logic;
-        r_nw:               out std_logic
+        rdy:                            in std_logic;
+        irq_flag, nmi_flag, rst_flag:   in std_logic;
+        sv:                             in std_logic;
+        IR:                             in std_logic_vector(DATA_WIDTH-1 downto 0);
+        cycle:                          in integer range 0 to 7;
+        cycle_increment:                out std_logic;
+        cycle_reset:                    out std_logic;
+        cycle_skip:                     out std_logic;
+        r_nw:                           out std_logic
         --Other signals
     );
 end Decoder;
 
 architecture Behavioral of Decoder is
 begin
-    process(clk_ph2) begin
-        if(rising_edge(clk_ph2)) then
-            if(rst = '1') then
-                --reset state
-            elsif(rdy = '0') then
+    process(rdy, irq_flag, nmi_flag, rst_flag, sv, IR, cycle) begin
+            if(rdy = '0') then
                 --No change state
             else
                 case IR is               
@@ -62,7 +59,6 @@ begin
                     end case;
                 end case;
             end if;
-        end if;
     end process;
 end Behavioral;
 

@@ -13,6 +13,7 @@ entity Timing_Logic is
         int_flag:           in std_logic;
         cycle_increment:    in std_logic;
         cycle_reset:        in std_logic;
+        cycle_skip:         in std_logic;
         cycle:              out integer range 0 to 7;
         IR:                 out std_logic_vector(DATA_WIDTH-1 downto 0);
         sync:               out std_logic
@@ -33,6 +34,7 @@ begin
 
     next_cycle <= 0 when cycle_reset = '1' else
                   cycle_reg + 1 when cycle_increment = '1' else
+                  cycle_reg + 2 when cycle_skip = '1' else
                   cycle_reg;
                
     process(next_cycle, int_flag, PD, IR_reg) begin
