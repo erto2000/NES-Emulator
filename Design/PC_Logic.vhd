@@ -8,24 +8,19 @@ entity PC_Logic is
         DATA_WIDTH: integer := 8
     );
     port(
-        PCL: in std_logic_vector(DATA_WIDTH-1 downto 0);
-        PCH: in std_logic_vector(DATA_WIDTH-1 downto 0);       
-        ADL: in std_logic_vector(DATA_WIDTH-1 downto 0);       
-        ADH: in std_logic_vector(DATA_WIDTH-1 downto 0);       
-        PCL_PCL: in std_logic;
-        PCH_PCH: in std_logic;
-        ADL_PCL: in std_logic;
-        ADH_PCH: in std_logic;
-        I_PC: in std_logic;       
-        PCL_Logic_Output: out std_logic_vector(DATA_WIDTH-1 downto 0);
-        PCH_Logic_Output: out std_logic_vector(DATA_WIDTH-1 downto 0)
+        PCL, PCH, ADL, ADH: in std_logic_vector(DATA_WIDTH-1 downto 0);
+        PCL_PCL, PCH_PCH:   in std_logic;
+        ADL_PCL, ADH_PCH:   in std_logic;
+        I_PC:               in std_logic;       
+        PCL_Logic_Output:   out std_logic_vector(DATA_WIDTH-1 downto 0);
+        PCH_Logic_Output:   out std_logic_vector(DATA_WIDTH-1 downto 0)
     );
 end PC_Logic;
 
 architecture Behavioral of PC_Logic is
-    signal PCLS: std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal PCHS: std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal PCLC: std_logic;
+    signal PCLS:    std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal PCHS:    std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal PCLC:    std_logic;
     signal PCL_SUM: std_logic_vector(DATA_WIDTH downto 0);
 begin
     PCLS <= PCL when PCL_PCL = '1' else
