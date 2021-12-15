@@ -25,12 +25,10 @@ architecture Behavioral of Timing_Logic is
     signal cycle_reg:    integer range 0 to 7 := 0;
     signal next_IR:      std_logic_vector(DATA_WIDTH-1 downto 0);
     signal IR_reg:       std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
-    signal next_sync:    std_logic;
-    signal sync_reg:     std_logic;
 begin
     cycle <= cycle_reg;
     IR <= IR_reg;
-    sync <= sync_reg;
+    sync <= cycle_reset;
 
     next_cycle <= 0 when cycle_reset = '1' else
                   cycle_reg + 1 when cycle_increment = '1' else
@@ -39,14 +37,12 @@ begin
                
     process(next_cycle, int_flag, PD, IR_reg) begin
         if(next_cycle = 0) then
-            next_sync <= '1';
             if(int_flag = '1') then
                 next_IR <= (others => '0');
             else
                 next_IR <= PD;
             end if;
         else    
-            next_sync <= '0';
             next_IR <= IR_reg;
         end if;
     end process;
@@ -56,11 +52,9 @@ begin
             if(rst = '1') then
                 cycle_reg <= 0;
                 IR_reg <= (others => '0');
-                sync_reg <= '1';
             else
                 cycle_reg <= next_cycle; 
                 IR_reg <= next_IR;
-                sync_reg <= next_sync;
             end if;     
         end if;
     end process;

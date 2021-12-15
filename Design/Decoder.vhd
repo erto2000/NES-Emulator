@@ -10,7 +10,6 @@ entity Decoder is
     port(
         rdy:                            in std_logic;
         irq_flag, nmi_flag, rst_flag:   in std_logic;
-        sv:                             in std_logic;
         IR:                             in std_logic_vector(DATA_WIDTH-1 downto 0);
         cycle:                          in integer range 0 to 7;
         cycle_increment:                out std_logic;
@@ -22,8 +21,18 @@ entity Decoder is
 end Decoder;
 
 architecture Behavioral of Decoder is
+    subtype T is std_logic_vector(DATA_WIDTH-1 downto 0);
+    constant BRK_IMPL: T := x"00";
+    constant ORA_XIND: T := x"01";
+    constant ORA_ZPG : T := x"05";
+    constant ASL_ZPG : T := x"06";
+    constant PHP_IMPL: T := x"08";
+    constant ORA_IMM : T := x"09";
+    constant ASL_A   : T := x"0A";
+    constant ORA_ABS : T := x"0D";
+    constant ASL_ABS : T := x"0E";
 begin
-    process(rdy, irq_flag, nmi_flag, rst_flag, sv, IR, cycle) begin
+    process(rdy, irq_flag, nmi_flag, rst_flag, IR, cycle) begin
             if(rdy = '0') then
                 --No change state
             else
