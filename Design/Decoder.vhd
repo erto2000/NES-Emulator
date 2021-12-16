@@ -31,6 +31,25 @@ architecture Behavioral of Decoder is
     constant ASL_A   : T := x"0A";
     constant ORA_ABS : T := x"0D";
     constant ASL_ABS : T := x"0E";
+    constant BPL_REL : T := x"";
+    constant ORA_INDY: T := x"";
+    constant ORA_ZPGX: T := x"";
+    constant ASL_ZPGX: T := x"";
+    constant CLC_IMPL: T := x"";
+    constant ORA_ABSY: T := x"";
+    constant ORA_ABSX: T := x"";
+    constant ASL_ABSX: T := x"";
+    constant JSR_ABS : T := x"";
+    constant AND_XIND: T := x"";
+    constant BIT_ZPG : T := x"";
+    constant AND_ZPG : T := x"";
+    constant ROL_ZPG : T := x"";
+    constant PLP_IMPL: T := x"";
+    constant AND_IMM : T := x"";
+    constant ROL_A   : T := x"";
+    constant BIT_ABS : T := x"";
+    constant AND_ABS : T := x"";
+    constant ROL_ABS : T := x"";
 begin
     process(rdy, irq_flag, nmi_flag, rst_flag, IR, cycle) begin
             if(rdy = '0') then
