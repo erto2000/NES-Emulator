@@ -11,8 +11,8 @@ entity ALU is
         AI:                         in std_logic_vector(DATA_WIDTH-1 downto 0);
         BI:                         in std_logic_vector(DATA_WIDTH-1 downto 0);
         SUMS, ANDS, EORS, ORS, SRS: in std_logic ;   
-        DAA, I_ADDC:                in std_logic;
-        AVR, ACR, HC:               out std_logic;
+        ONE_ADDC:                   in std_logic;
+        AVR, ACR:                   out std_logic;
         ALU_OUT:                    out std_logic_vector(DATA_WIDTH-1 downto 0)
     );
 end ALU;
@@ -25,13 +25,13 @@ begin
     AVR <= (AI(DATA_WIDTH-1) and BI(DATA_WIDTH-1) and (not(alu_out_signal(DATA_WIDTH-1)))) 
             or ((not(AI(DATA_WIDTH-1))) and (not(BI(DATA_WIDTH-1))) and alu_out_signal(DATA_WIDTH-1));
 
-    process(AI, BI, SUMS, ANDS, EORS, ORS, SRS, I_ADDC, sum_out, alu_out_signal) begin
+    process(AI, BI, SUMS, ANDS, EORS, ORS, SRS, ONE_ADDC, sum_out, alu_out_signal) begin
         sum_out <= (others => '0');
         ACR <= '0';
         alu_out_signal <= (others => '0');
         
         if (SUMS = '1') then
-            sum_out <= ('0' & AI) + ('0' & BI) + I_ADDC;
+            sum_out <= ('0' & AI) + ('0' & BI) + ONE_ADDC;
             ACR <= sum_out(DATA_WIDTH);
             alu_out_signal <= sum_out(DATA_WIDTH-1 downto 0);
         elsif (ANDS = '1') then
@@ -42,7 +42,7 @@ begin
             alu_out_signal <= AI or BI;
         elsif (SRS = '1') then
             ACR <= AI(0);
-            alu_out_signal <= '0' & AI(DATA_WIDTH-1 downto 1);
+            alu_out_signal <= ONE_ADDC & AI(DATA_WIDTH-1 downto 1);
         end if;    
     end process;
 end Behavioral;
