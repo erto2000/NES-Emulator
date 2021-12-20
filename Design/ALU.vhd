@@ -8,18 +8,18 @@ entity ALU is
         DATA_WIDTH: integer := 8
     );
     port (
-        AI:                         in std_logic_vector(DATA_WIDTH-1 downto 0);
-        BI:                         in std_logic_vector(DATA_WIDTH-1 downto 0);
-        SUMS, ANDS, EORS, ORS, SRS: in std_logic ;   
-        ONE_ADDC:                   in std_logic;
-        AVR, ACR:                   out std_logic;
-        ALU_OUT:                    out std_logic_vector(DATA_WIDTH-1 downto 0)
+        AI                          : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        BI                          : in std_logic_vector(DATA_WIDTH-1 downto 0);
+        SUMS, ANDS, EORS, ORS, SRS  : in std_logic ;   
+        ONE_ADDC                    : in std_logic;
+        AVR, ACR                    : out std_logic;
+        ALU_OUT                     : out std_logic_vector(DATA_WIDTH-1 downto 0)
     );
 end ALU;
 
 architecture Behavioral of ALU is
-    signal sum_out:         std_logic_vector (DATA_WIDTH downto 0);
-    signal alu_out_signal:  std_logic_vector (DATA_WIDTH-1 downto 0);
+    signal sum_out        : std_logic_vector (DATA_WIDTH downto 0);
+    signal alu_out_signal : std_logic_vector (DATA_WIDTH-1 downto 0);
 begin   
     ALU_OUT <= alu_out_signal;
     AVR <= (AI(DATA_WIDTH-1) and BI(DATA_WIDTH-1) and (not(alu_out_signal(DATA_WIDTH-1)))) 
