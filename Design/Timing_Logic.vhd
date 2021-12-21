@@ -8,7 +8,7 @@ entity Timing_Logic is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk_ph1       : in std_logic;
+        rst, clk, clk_ph1  : in std_logic;
         PD                 : in std_logic_vector(DATA_WIDTH-1 downto 0);
         interrupt          : in std_logic;
         cycle_increment    : in std_logic;
@@ -50,8 +50,8 @@ begin
     end process;
     
     --Change cycle and instruction on clk_ph1
-    process(clk_ph1) begin
-        if(rising_edge(clk_ph1)) then
+    process(clk) begin
+        if(rising_edge(clk) and clk_ph1 = '0') then --rising edge ph1
             if(rst = '1') then
                 cycle_reg <= 0;
                 IR <= (others => '0');

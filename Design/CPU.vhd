@@ -22,7 +22,8 @@ end CPU;
 
 architecture Behavioral of CPU is
     --Internal Signals--
-    signal clk_ph1, clk_ph2 : std_logic;
+    signal clk_ph1          : std_logic := '1';
+    signal clk_ph2          : std_logic := '0';
     signal rdy_signal       : std_logic;
     signal r_nw_signal      : std_logic; 
  
@@ -68,16 +69,13 @@ architecture Behavioral of CPU is
     signal FD_ADL, FE_ADL, FF_ADL, S_ADL, ZERO_S, SB_S    : std_logic;
     signal D_S, S_SB, NDB_ADD, DB_ADD, ADL_ADD, ONE_ADDC  : std_logic;
     signal DAA, DSA, SUMS, ANDS, EORS                     : std_logic;
-    signal ORS, SRS, ADD_ADL, ADD_SB, FF_ADD              : std_logic;
+    signal ORS, SRS, ADD_ADL, ADD_ADH, ADD_SB, FF_ADD     : std_logic;
     signal ZERO_ADD, SB_ADD, SB_AC, DB_SB, ADH_SB         : std_logic;
     signal AC_DB, AC_SB, SB_X, X_SB, SB_Y, Y_SB           : std_logic;
     signal P_DB, DB0_C, ZERO_C, ONE_C, ACR_C, DB1_Z       : std_logic;
     signal DBZ_Z, DB2_I, ZERO_I, ONE_I,  DB3_D            : std_logic;
     signal ZERO_D, ONE_D, DB6_V, AVR_V, ONE_V, DB7_N      : std_logic;
-begin
-    clk_ph1 <= not clk;
-    clk_ph2 <= clk;
-    
+begin  
     rdy_signal <= rdy or not r_nw_signal;
     
     r_nw <= r_nw_signal when BE = '1' else
@@ -111,9 +109,9 @@ begin
     PCL_Logic_Output <= PCL_SUM(DATA_WIDTH-1 downto 0);
     PCH_Logic_Output <= PCHS + PCLC;  
     
-    PCL <= PCL_Logic_Output when falling_edge(clk_ph2);
+    PCL <= PCL_Logic_Output when rising_edge(clk) and clk_ph2 = '1'; --falling edge ph2
            
-    PCH <= PCH_Logic_Output when falling_edge(clk_ph2);
+    PCH <= PCH_Logic_Output when rising_edge(clk) and clk_ph2 = '1'; --falling edge ph2
            
     ABL <= ADL when (ADL_ABL and clk_ph1) = '1' else
            ABL;
@@ -144,6 +142,7 @@ begin
     ADH <= DL when DL_ADH = '1' else
            PCH when PCH_ADH = '1' else
            SB when SB_ADH = '1' else
+           ADD when ADD_ADH = '1' else
            x"00" when ZERO_ADH = '1' else
            x"01" when ONE_ADH = '1' else
            x"FF" when FF_ADH = '1' else
@@ -173,7 +172,7 @@ begin
           ADL when ADL_ADD = '1' else
           BI;
           
-    ADD <= ALU_OUT when ((SUMS or ANDS or EORS or ORS or SRS) = '1' and falling_edge(clk_ph2));
+    ADD <= ALU_OUT when ((SUMS or ANDS or EORS or ORS or SRS) = '1' and rising_edge(clk) and clk_ph2 = '1'); --falling edge ph2
           
     X <= SB when SB_X = '1' else
          X;
@@ -217,6 +216,13 @@ begin
     --Negative(N) flag--        
     P(7) <= DB(7) when DB7_N = '1' else
             P(7);
+            
+    clk_generation: process(clk) begin
+        if(rising_edge(clk)) then
+            clk_ph1 <= not clk_ph1;    
+            clk_ph2 <= not clk_ph2;    
+        end if;
+    end process;
     
     ALU: entity work.ALU
     port map(
@@ -236,6 +242,7 @@ begin
     Timing_Logic: entity work.Timing_Logic
     port map(
         rst             => rst,
+        clk             => clk,
         clk_ph1         => clk_ph1,
         PD              => PD,
         interrupt       => interrupt,
@@ -250,6 +257,7 @@ begin
     Interrupt_Logic: entity work.Interrupt_Logic
     port map(
         rst         => rst,
+        clk         => clk,
         clk_ph1     => clk_ph1,
         irq         => irq,
         nmi         => nmi,
@@ -314,6 +322,7 @@ begin
         ORS             => ORS,
         SRS             => SRS,
         ADD_ADL         => ADD_ADL,
+        ADD_ADH         => ADD_ADH,
         ADD_SB          => ADD_SB,
         FF_ADD          => FF_ADD,
         ZERO_ADD        => ZERO_ADD,

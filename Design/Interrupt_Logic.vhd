@@ -8,18 +8,18 @@ entity Interrupt_Logic is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk_ph1                   : in std_logic;
+        rst, clk, clk_ph1              : in std_logic;
         irq, nmi                       : in std_logic;
         irq_flag, nmi_flag, rst_flag   : out std_logic := '0'
     );
 end Interrupt_Logic;
 
 architecture Behavioral of Interrupt_Logic is
-    signal previous_nmi_reg: std_logic := '1';
+    signal previous_nmi_reg : std_logic := '1';
 begin
     --Detect interrupt signals
-    process(clk_ph1) begin
-        if(rising_edge(clk_ph1)) then
+    process(clk) begin
+        if(rising_edge(clk) and clk_ph1 = '0') then --rising edge ph1
             if(rst = '1') then
                 irq_flag <= '0';
                 nmi_flag <= '0';

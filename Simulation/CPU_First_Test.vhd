@@ -16,9 +16,9 @@ begin
     w_nr <= not r_nw;
 
     process begin
-        clk <= '0';
-        wait for 1ns;
         clk <= '1';
+        wait for 1ns;
+        clk <= '0';
         wait for 1ns;
     end process;
     
