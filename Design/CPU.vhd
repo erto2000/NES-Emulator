@@ -192,7 +192,7 @@ begin
     
     --Zero(Z) flag--        
     P(1) <= DB(1) when DB1_Z = '1' else
-            not or_reduce(DB) when ZERO_C = '1' else
+            not or_reduce(DB) when DBZ_Z = '1' else
             P(1);       
     
     --IRQ disable(I) flag--      

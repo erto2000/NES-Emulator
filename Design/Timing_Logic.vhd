@@ -33,7 +33,7 @@ begin
     --Determine next cycle based on the control input
     next_cycle <= 0 when cycle_reset = '1' else
                   cycle_reg + 1 when cycle_increment = '1' else
-                  cycle_reg + 1 when cycle_skip = '1' else
+                  cycle_reg + 2 when cycle_skip = '1' else
                   cycle_reg;
     
     --Fetch new opcode or start interrupt or do nothing
