@@ -8,48 +8,36 @@ entity Interrupt_Logic is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk_ph2:                   in std_logic;
-        irq, nmi:                       in std_logic;
-        irq_clr, nmi_clr, rst_clr:      in std_logic;
-        irq_disable:                    in std_logic;
-        irq_flag, nmi_flag, rst_flag:   out std_logic;
-        int_flag:                       out std_logic
+        rst, clk, clk_ph1              : in std_logic;
+        irq, nmi                       : in std_logic;
+        irq_flag, nmi_flag, rst_flag   : out std_logic := '0'
     );
 end Interrupt_Logic;
 
 architecture Behavioral of Interrupt_Logic is
-    signal irq_flag_reg:             std_logic := '0';
-    signal nmi_flag_reg:             std_logic := '0';
-    signal previous_nmi_reg:    std_logic := '1';
+    signal previous_nmi_reg : std_logic := '1';
 begin
-    irq_flag <= irq_flag_reg;
-    nmi_flag <= nmi_flag_reg;
-    int_flag <= irq_flag_reg or nmi_flag_reg;
-    
-    process(clk_ph2) begin
-        if(rising_edge(clk_ph2)) then
+    --Detect interrupt signals
+    process(clk) begin
+        if(rising_edge(clk) and clk_ph1 = '0') then --rising edge ph1
             if(rst = '1') then
-                irq_flag_reg <= '0';
-                nmi_flag_reg <= '0';
-                rst_flag <= '1';
+                irq_flag <= '0';
+                nmi_flag <= '0';
+                rst_flag <= '1'; --If rst is 1 start reset sequence on clk_ph1
                 previous_nmi_reg <= '1';
             else
-                if(irq_clr = '1' or irq_disable = '1') then
-                    irq_flag_reg <= '0';
-                elsif(irq = '0') then
-                    irq_flag_reg <= '1';
+                --Detect when irq signal is 0
+                if(irq = '0') then
+                    irq_flag <= '1';
                 end if;
                 
+                --Detect when nmi signal goes from 1 to 0(sampled on clk_ph1)
                 previous_nmi_reg <= nmi;
-                if(nmi_clr = '1') then
-                    nmi_flag_reg <= '0';
-                elsif((previous_nmi_reg and (not nmi))= '1') then
-                    nmi_flag_reg <= '1';
+                if((previous_nmi_reg and not nmi) = '1') then
+                    nmi_flag <= '1';
                 end if;
                 
-                if(rst_clr = '1') then
-                    rst_flag <= '0';
-                end if;
+                rst_flag <= '0';
             end if;
         end if;
     end process;
