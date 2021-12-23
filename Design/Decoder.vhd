@@ -10,7 +10,7 @@ entity Decoder is
     port(
         rdy:                            in std_logic;
         irq_flag, nmi_flag, rst_flag:   in std_logic;
-        IR:                             in std_logic_vector(DATA_WIDTH-1 downto 0);
+        instruction:                             in std_logic_vector(DATA_WIDTH-1 downto 0);
         cycle:                          in integer range 0 to 7;
         cycle_increment:                out std_logic;
         cycle_reset:                    out std_logic;
@@ -50,20 +50,23 @@ architecture Behavioral of Decoder is
     constant BIT_ABS : T := x"";
     constant AND_ABS : T := x"";
     constant ROL_ABS : T := x"";
+    constant ADC_IMM : T := x"69";
+    
 begin
-    process(rdy, irq_flag, nmi_flag, rst_flag, IR, cycle) begin
+    process(rdy, irq_flag, nmi_flag, rst_flag, instruction, cycle) begin
+            
+            
             if(rdy = '0') then
                 --No change state
             else
-                case IR is               
-                when x"00" =>
+                case instruction is               
+                when ADC_IMM =>
                     case cycle is
                     when 0 =>
-                        --add<=1; adl<=1;     
+                        AC_SB <= '1'; SB_ADD <= '1'; DL_DB  <= '1'; DB_ADD <= '1'; SUMS <= '1'; 
                     when 1 =>
-                        --add<=1; adl<=1;
-                    when others =>
-                        --add<=1; adl<=1;
+                        
+
                     end case;
                     
                 when x"01" =>
@@ -89,24 +92,6 @@ begin
             end if;
     end process;
 end Behavioral;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
