@@ -231,43 +231,119 @@ begin
         
         --Decoder
         case instruction is               
-        when x"00" =>
-            case cycle is
-            when 0 =>
-                cycle_increment <= '1';
-                DL_DB<='1';DB_ADD<='1';
-                AC_SB<='1';SB_ADD<='1';
-                SUMS<='1';
-                PCL_PCL<='1';I_PC<='1';PCH_PCH<='1';
-            when 1 =>
-                cycle_reset<='1';
-                ADD_SB<='1';SB_AC<='1';
-                AVR_V <= '1'; ACR_C <='1'; DBZ_Z <='1';	DB7_N <= '1';    
-                PCL_PCL<='1';I_PC<='1';PCH_PCH<='1';
-                PCL_ADL<='1';PCH_ADH<='1';ADL_ABL<='1';ADH_ABH<='1';        
-            when others =>
-            end case;     
-        
-        when ADC_IMM =>
-            case cycle is
-            when 0 =>
-                PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';
-                DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1';
-                SUMS<='1';
-                PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';         
-                ACR_C<='1'; AVR_V<='1'; 
-                
-            when 1 =>
-                ADD_SB<='1'; SB_AC<='1';                
-                AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';
-                PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';
-                PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';
-            when others =>
-            end case;
-                 
-        when others =>
-        end case;
+            when x"00" =>
+                case cycle is
+                    when 0 =>
+                    when 1 =>     
+                    when others =>
+                end case;     
 
+            when ADC_IMM =>
+                case cycle is
+                    when 0 =>
+                        cycle_increment <= '1';
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC      
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1';           -- Send Data Latch and Accumulator to ALU
+                        SUMS<='1';                                                  -- Activate ALU Sum
+                        ACR_C<='1'; AVR_V<='1';                                     -- Set C and V flags
+                        
+                    when 1 =>
+                        cycle_reset <= '1';                                         
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
+                        ADD_SB<='1'; SB_AC<='1';                                    -- Send Add Register to Accumulator
+                        AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                         -- Set Z and N flag  
+                           
+                    when others =>
+                end case;  
+                
+            when ADC_ZPG =>
+                case cycle is
+                    when 0 =>
+                        cycle_increment <= '1';      
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC 
+                        
+                    when 1 =>
+                        cycle_increment <= '1'; 
+                        DL_ADL <= '1'; ZERO_ADH <= '1'; ADL_ABL<='1'; ADH_ABH<='1'; -- send data latch to low address bus, write h'00' to address bus
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1';           -- Send Data Latch and Accumulator to ALU
+                        SUMS<='1';                                                  -- Activate ALU Sum
+                        ACR_C<='1'; AVR_V<='1';                                     -- Set C and V flags
+                        
+                    when 2 =>
+                        cycle_reset <= '1';
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC 
+                        ADD_SB<='1'; SB_AC<='1';                                    -- Send Add Register to Accumulator
+                        AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                         -- Set Z and N flag  
+                    when others =>
+                end case;   
+                         
+            when ADC_ZPGX =>
+                case cycle is
+                    when 0 =>
+                        cycle_increment <= '1';
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC      
+                        DL_DB<='1'; DB_ADD<='1'; X_SB<='1'; SB_ADD<='1';            -- Send Data Latch and X Register to ALU
+                        SUMS<='1';                                                  -- Activate ALU Sum
+                        
+                    when 1 =>
+                        cycle_increment <= '1';
+                        ADD_ADL <= '1'; ADL_ABL <= '1'; ZERO_ADH <= '1'; ADH_ABH <= '1'; --Send Add register to low address bus, send zero to high address bus     
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1';           -- Send Data Latch and Accumulator to ALU
+                        SUMS<='1';                                                  -- Activate ALU Sum
+                        ACR_C<='1'; AVR_V<='1';                                     -- Set C and V flags
+                        
+                    when 2 =>
+                        cycle_increment <= '1';
+                        ADD_SB<='1'; SB_AC<='1';                                    -- Send Add Register to Accumulator
+                        AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                         -- Set Z and N flag  
+                        
+                    when 3 =>
+                        cycle_reset <= '1';
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC 
+                        
+                    when others =>       
+                end case;   
+                
+            when ADC_ABS =>
+                case cycle is
+                    when 0 =>
+                        cycle_increment <= '1';    
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC  
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD <='1';                    -- Send Data Latch and 0 to ALU
+                        SUMS<='1';                                                  -- Activate ALU Sum
+                        
+                    when 1 =>   
+                        cycle_increment <= '1'; 
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC  
+                         
+                    when 2 =>   
+                        cycle_increment <= '1';  
+                        ADD_ADL <= '1'; ADL_ABL <= '1'; DL_ADH <= '1'; ADH_ABH <= '1'; --Send Add register to low address bus, send data latch to high address bus
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1';           -- Send Data Latch and Accumulator to ALU
+                        SUMS<='1';                                                  -- Activate ALU Sum
+                        ACR_C<='1'; AVR_V<='1';                                     -- Set C and V flags                                              --
+                        
+                    when 3 =>     
+                        cycle_reset <= '1';
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
+                        ADD_SB<='1'; SB_AC<='1';                                    -- Send Add Register to Accumulator
+                        AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                         -- Set Z and N flag     
+                        
+                    when others =>  
+                end case;
+                
+            when others =>
+        end case;
+                         
         --These are Overriding control signals decided by decoder
         if(rst_flag = '1') then
             --If rst is 1 then start reset sequence
