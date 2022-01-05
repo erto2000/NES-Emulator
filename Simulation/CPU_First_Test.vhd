@@ -16,10 +16,10 @@ begin
     w_nr <= not r_nw;
 
     process begin
-        clk <= '1';
-        wait for 1ns;
         clk <= '0';
-        wait for 1ns;
+        wait for 10;
+        clk <= '1';
+        wait for 10;
     end process;
     
     a: entity work.CPU
