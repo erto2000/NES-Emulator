@@ -16,6 +16,7 @@ entity Decoder is
         cycle_increment                : out std_logic;
         cycle_skip                     : out std_logic;
         cycle_rst                      : out std_logic;
+        nmi_flag_clr                   : out std_logic;
         interrupt                      : out std_logic;
         r_nw                           : out std_logic;
        
@@ -208,6 +209,7 @@ begin
         cycle_reset <= '0';
         cycle_rst <= cycle_reset;
         interrupt <= '0';
+        nmi_flag_clr <= '0';
         r_nw <= '1';
         
         --Default Control Signals
@@ -229,6 +231,23 @@ begin
         
         --Decoder
         case instruction is               
+        when x"00" =>
+            case cycle is
+            when 0 =>
+                cycle_increment <= '1';
+                DL_DB<='1';DB_ADD<='1';
+                AC_SB<='1';SB_ADD<='1';
+                SUMS<='1';
+                PCL_PCL<='1';I_PC<='1';PCH_PCH<='1';
+            when 1 =>
+                cycle_reset<='1';
+                ADD_SB<='1';SB_AC<='1';
+                AVR_V <= '1'; ACR_C <='1'; DBZ_Z <='1';	DB7_N <= '1';    
+                PCL_PCL<='1';I_PC<='1';PCH_PCH<='1';
+                PCL_ADL<='1';PCH_ADH<='1';ADL_ABL<='1';ADH_ABH<='1';        
+            when others =>
+            end case;     
+        
         when ADC_IMM =>
             case cycle is
             when 0 =>
@@ -261,7 +280,8 @@ begin
             PCL_PCL <= '1'; PCH_PCH <= '1'; ADL_PCL <= '0'; ADH_PCH <= '0'; I_PC <= '0';
             SUMS <= '0'; ANDS <= '0'; EORS <= '0'; ORS <= '0'; SRS <= '0';
         elsif(cycle_reset = '1' and nmi_flag = '1') then
-            --If it is the last cycle of the instruction and nmi is set start nmi sequence
+            --If it is the last cycle of the instruction and nmi is set start nmi sequence and clear flag
+            nmi_flag_clr <= '0';
             nmi_initiated <= '1';
             interrupt <= '1';
             --Prevent PC increment in order to make return address right

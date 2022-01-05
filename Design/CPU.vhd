@@ -58,6 +58,7 @@ architecture Behavioral of CPU is
     signal nmi_flag     : std_logic;
     signal rst_flag     : std_logic;
     signal irq_disable  : std_logic;
+    signal nmi_flag_clr : std_logic;
     
     --CONTROL SIGNALS--
     signal DL_DB, DL_ADL, DL_ADH, ZERO_ADH                : std_logic;
@@ -256,14 +257,15 @@ begin
     
     Interrupt_Logic: entity work.Interrupt_Logic
     port map(
-        rst         => rst,
-        clk         => clk,
-        clk_ph1     => clk_ph1,
-        irq         => irq,
-        nmi         => nmi,
-        irq_flag    => irq_flag,
-        nmi_flag    => nmi_flag,
-        rst_flag    => rst_flag
+        rst          => rst,
+        clk          => clk,
+        clk_ph1      => clk_ph1,
+        irq          => irq,
+        nmi          => nmi,
+        irq_flag     => irq_flag,
+        nmi_flag     => nmi_flag,
+        rst_flag     => rst_flag,
+        nmi_flag_clr => nmi_flag_clr
     );
     
     Decoder: entity work.Decoder
@@ -279,6 +281,7 @@ begin
         cycle_rst       => cycle_reset,
         irq_disable     => P(2),
         interrupt       => interrupt,
+        nmi_flag_clr    => nmi_flag_clr,
         r_nw            => r_nw_signal,
         DL_DB           => DL_DB,
         DL_ADL          => DL_ADL,
