@@ -64,7 +64,7 @@ architecture Behavioral of CPU is
     signal DL_DB, DL_ADL, DL_ADH, ZERO_ADH                : std_logic;
     signal ONE_ADH, FF_ADH, ADH_ABH                       : std_logic;
     signal ADL_ABL, PCL_PCL, ADL_PCL                      : std_logic;
-    signal I_PC, PCL_DB, PCL_ADL                          : std_logic;
+    signal I_PC, PCL_DB, PCL_ADL, BI_ADL                  : std_logic;
     signal PCH_PCH, ADH_PCH, PCH_DB, PCH_ADH              : std_logic;
     signal SB_ADH, SB_DB, FA_ADL, FB_ADL, FC_ADL          : std_logic;
     signal FD_ADL, FE_ADL, FF_ADL, S_ADL, ZERO_S, SB_S    : std_logic;
@@ -132,6 +132,7 @@ begin
            PCL when PCL_ADL = '1' else
            S when S_ADL = '1' else
            ADD when ADD_ADL = '1' else
+           BI when BI_ADL = '1' else
            x"FA" when FA_ADL = '1' else
            x"FB" when FB_ADL = '1' else
            x"FC" when FC_ADL = '1' else
@@ -274,6 +275,7 @@ begin
         irq_flag        => irq_flag,
         nmi_flag        => nmi_flag,
         rst_flag        => rst_flag,
+        ACR             => ACR,
         instruction     => instruction,
         cycle           => cycle,
         cycle_increment => cycle_increment,
@@ -296,6 +298,7 @@ begin
         I_PC            => I_PC,
         PCL_DB          => PCL_DB,
         PCL_ADL         => PCL_ADL,
+        BI_ADL          => BI_ADL,
         PCH_PCH         => PCH_PCH,
         ADH_PCH         => ADH_PCH,
         PCH_DB          => PCH_DB,
