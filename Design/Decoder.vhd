@@ -11,7 +11,9 @@ entity Decoder is
         rdy                            : in std_logic;
         irq_flag, nmi_flag, rst_flag   : in std_logic;
         irq_disable                    : in std_logic;
-        ACR                            : in std_logic;          -- carry signal on ALU
+        ACR                            : in std_logic;                                  -- Carry signal of ALU
+        P                              : in std_logic_vector(7 downto 0);               -- Status Register
+        DB_Sign_Bit                    : in std_logic;                                  -- Sign of DB signal
         instruction                    : in std_logic_vector(DATA_WIDTH-1 downto 0);
         cycle                          : in integer range 0 to 7;
         cycle_increment                : out std_logic;
@@ -51,6 +53,7 @@ architecture Behavioral of Decoder is
     
     --Internal Signal to Set
     signal ACR_FLAG        : std_logic;
+    signal Sign_Bit_Flag   : std_logic;
 
     --Instruction hex codes
     subtype T is std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -577,7 +580,50 @@ begin
                         AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                          -- Set Z and N flag
                         
                     when others =>
-                end case;              
+                end case;           
+                
+            when BCC_REL =>
+                case cycle is
+                    when 0 =>
+                        cycle_increment <= '1';    
+                        PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                       -- Send PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                        -- Increment PC  
+                        ADL_ADD<='1'; DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; SUMS<='1';                 -- Send PCL, DL to ALU and add them
+                        Sign_Bit_Flag<=DB_Sign_Bit;                                                   -- Save DB Sign Bit    
+                        ACR_FLAG<=ACR;                                                                -- Save ACR                                                       
+                        
+                    when 1 =>
+                        if(P(7) = '0') then -- C = '0' then branch
+                            cycle_increment<='1';
+                            ADD_ADL<='1'; ADL_PCL<='1'; -- Send new PCL 
+                        else
+                            cycle_reset<='1';
+                            PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';    -- Send PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC  
+                        end if;
+                        
+                    when 2 =>
+                        if(DB_Sign_Bit = '0' and ACR_FLAG = '1') then -- page cross occured to upper page
+                            cycle_increment<='1';
+                            PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';   -- Add 1 to PCH
+                            
+                        elsif(DB_Sign_Bit = '1' and ACR_FLAG = '0') then -- page cross occured to lower page
+                            cycle_increment<='1';
+                            PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';   -- Substract 1 from PCH
+                        else
+                            cycle_reset<='1';
+                            PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';      -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                       -- Increment PC 
+                        end if;
+                    
+                    when 3 =>
+                        cycle_reset<='1';
+                        PCL_ADL<='1'; ADL_ABL<='1'; ADD_ADH<='1'; ADH_ABH<='1';    -- Send new PC to Addressbus
+                        PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC  
+                    
+                    when others =>
+                end case;
+                
             when others =>
         end case;
         

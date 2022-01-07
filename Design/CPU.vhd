@@ -34,7 +34,7 @@ architecture Behavioral of CPU is
     signal DOR, ABL, ABH, PCLS, PCHS, PCL, PCH, S, AI, BI, ADD, P, X, Y, AC: std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     
     --Busses--
-    signal DB, SB, ADL, ADH:  std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal DB, SB, ADL, ADH  : std_logic_vector(DATA_WIDTH-1 downto 0);
     
     --PC signals--
     signal PCL_Logic_Output, PCH_Logic_Output   : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -276,6 +276,8 @@ begin
         nmi_flag        => nmi_flag,
         rst_flag        => rst_flag,
         ACR             => ACR,
+        P               => P,
+        DB_Sign_Bit     => DB(7),
         instruction     => instruction,
         cycle           => cycle,
         cycle_increment => cycle_increment,
