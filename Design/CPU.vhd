@@ -75,7 +75,7 @@ architecture Behavioral of CPU is
     signal AC_DB, AC_SB, SB_X, X_SB, SB_Y, Y_SB                 : std_logic;
     signal P_DB, DB0_C, ZERO_C, ONE_C, ACR_C, DB1_Z             : std_logic;
     signal DBZ_Z, DB2_I, ZERO_I, ONE_I, ZERO_B, ONE_B,  DB3_D   : std_logic;
-    signal ZERO_D, ONE_D, DB6_V, AVR_V, ONE_V, DB7_N            : std_logic;
+    signal ZERO_D, ONE_D, DB6_V, AVR_V, ZERO_V, ONE_V, DB7_N    : std_logic;
 begin  
     rdy_signal <= rdy or not r_nw_signal;
     
@@ -205,6 +205,7 @@ begin
     --Overflow(V) flag--     
     P(6) <= DB(6) when DB6_V = '1' else
             AVR when AVR_V = '1' else
+            '0' when ZERO_V = '1' else
             '1' when ONE_V = '1' else
             P(6);
     
@@ -377,6 +378,7 @@ begin
         ONE_D             => ONE_D,
         DB6_V             => DB6_V,
         AVR_V             => AVR_V,
+        ZERO_V            => ZERO_V,
         ONE_V             => ONE_V,
         DB7_N             => DB7_N
     );
