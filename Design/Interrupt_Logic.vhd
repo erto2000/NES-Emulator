@@ -10,7 +10,7 @@ entity Interrupt_Logic is
     port(
         rst, clk, clk_ph1              : in std_logic;
         irq, nmi                       : in std_logic;
-        nmi_flag_clr                   : in std_logic;
+        nmi_flag_clr, rst_flag_clr     : in std_logic;
         irq_flag, nmi_flag, rst_flag   : out std_logic := '0'
     );
 end Interrupt_Logic;
@@ -42,7 +42,9 @@ begin
                     nmi_flag <= '0';
                 end if;
                 
-                rst_flag <= '0';
+                if(rst_flag_clr = '1') then
+                    rst_flag <= '0';
+                end if;
             end if;
         end if;
     end process;
