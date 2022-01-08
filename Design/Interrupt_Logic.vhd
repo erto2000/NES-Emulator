@@ -10,8 +10,8 @@ entity Interrupt_Logic is
     port(
         rst, clk, clk_ph1              : in std_logic;
         irq, nmi                       : in std_logic;
-        nmi_flag_clr, rst_flag_clr     : in std_logic;
-        irq_flag, nmi_flag, rst_flag   : out std_logic := '0'
+        nmi_flag_clr                   : in std_logic;
+        irq_flag, nmi_flag             : out std_logic := '0'
     );
 end Interrupt_Logic;
 
@@ -24,7 +24,6 @@ begin
             if(rst = '1') then
                 irq_flag <= '0';
                 nmi_flag <= '0';
-                rst_flag <= '1'; --If rst is 1 start reset sequence on clk_ph1
                 previous_nmi_reg <= '1';
             else
                 --Detect when irq signal is 0
@@ -40,10 +39,6 @@ begin
                     nmi_flag <= '1';
                 elsif(nmi_flag_clr = '1') then
                     nmi_flag <= '0';
-                end if;
-                
-                if(rst_flag_clr = '1') then
-                    rst_flag <= '0';
                 end if;
             end if;
         end if;
