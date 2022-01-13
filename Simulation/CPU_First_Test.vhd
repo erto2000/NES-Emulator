@@ -17,9 +17,9 @@ begin
 
     process begin
         clk <= '0';
-        wait for 1ns;
+        wait for 10ns;
         clk <= '1';
-        wait for 1ns;
+        wait for 10ns;
     end process;
     
     a: entity work.CPU

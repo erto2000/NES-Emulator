@@ -12,6 +12,6 @@ module tb_top(
     clk = 0;
     end
     
-    always #100 clk = ~clk;
+    always #10 clk = ~clk;
     
 endmodule

@@ -10,6 +10,7 @@ entity Interrupt_Logic is
     port(
         rst, clk, clk_ph1              : in std_logic;
         irq, nmi                       : in std_logic;
+        irq_disable                    : in std_logic;
         nmi_flag_clr                   : in std_logic;
         irq_flag, nmi_flag             : out std_logic := '0'
     );
@@ -27,7 +28,7 @@ begin
                 previous_nmi_reg <= '1';
             else
                 --Detect when irq signal is 0
-                if(irq = '0') then
+                if(irq = '0' and irq_disable = '0') then
                     irq_flag <= '1';
                 else
                     irq_flag <= '0';

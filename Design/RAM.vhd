@@ -18,7 +18,11 @@ end RAM;
 
 architecture Behavioral of RAM is
     type ram_type is array (0 to 2**ADDRESS_WIDTH-1) of std_logic_vector (DATA_WIDTH-1 downto 0);
-    signal ram : ram_type := (x"01", x"01", others => (others => '0'));
+    signal ram : ram_type := (x"69", x"01", x"65", x"13", x"75", x"14", x"6D", x"15", x"00", x"7D", x"16", x"00", x"79", x"17", x"00", 
+                              x"61", x"1A", x"71", x"1C",
+                              --13     14     15     16     17     18     19     1A     1B     1C     1D
+                              x"02", x"03", x"04", x"05", x"06", x"07", x"08", x"18", x"00", x"19", x"00",
+                              others => (others => '0'));
     
     signal output: std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
 begin
