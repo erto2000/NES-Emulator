@@ -1441,6 +1441,7 @@ begin
                     end if;   
                     ADL_ABL<='1'; ADH_ABH<='1';              
                     DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';      -- Send DL to Add register 
+                    ONE_I<='1';                                             -- Disable interrupts
                 
                 when 5 =>
                     cycle_increment<='1';
@@ -1466,7 +1467,6 @@ begin
                     elsif(irq_initiated = '1') then
                         CLR_irq_initiated <= '1';       
                     end if;    
-                    ONE_I<='1';                                                -- Disable interrupts
                 
                 when others =>
             end case;    
