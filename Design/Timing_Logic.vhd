@@ -39,8 +39,7 @@ begin
                 cycle_reg <= 0 when cycle_reset = '1' else                     
                              cycle_reg + 1 when cycle_increment = '1' else     
                              cycle_reg + 2 when cycle_skip = '1' else          
-                             cycle_reg + 3 when cycle_double_skip = '1' else   
-                             cycle_reg;   
+                             cycle_reg + 3 when cycle_double_skip = '1';  
                
                 IR <= (others => '0') when (cycle_reset and (irq_flag or nmi_flag)) = '1' else                     
                       PD when cycle_reset = '1';                                                

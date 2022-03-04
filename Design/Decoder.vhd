@@ -25,7 +25,7 @@ entity Decoder is
         r_nw                           : out std_logic;
        
         --CONTROL SIGNALS--
-        DL_DB, DL_ADL, DL_ADH, ZERO_ADH                      : out std_logic;
+        D_DL, DL_DB, DL_ADL, DL_ADH, ZERO_ADH                : out std_logic;
         ONE_ADH, FF_ADH, ADH_ABH                             : out std_logic;
         ADL_ABL, PCL_PCL, ADL_PCL                            : out std_logic;
         I_PC, PCL_DB, PCL_ADL, BI_ADL                        : out std_logic;
@@ -230,7 +230,7 @@ begin
         CLR_Sign_Bit_Flag<='0';
         
         --Default Control Signals
-        DL_DB<='0'; DL_ADL<='0'; DL_ADH<='0'; ZERO_ADH<='0';
+        D_DL<='1'; DL_DB<='0'; DL_ADL<='0'; DL_ADH<='0'; ZERO_ADH<='0';
         ONE_ADH<='0'; FF_ADH<='0'; ADH_ABH<='0';
         ADL_ABL<='0'; PCL_PCL<='0'; ADL_PCL<='0'; BI_ADL<='0';
         I_PC<='0'; PCL_DB<='0'; PCL_ADL<='0';
@@ -238,7 +238,7 @@ begin
         SB_ADH<='0'; SB_DB<='0'; FA_ADL<='0'; FB_ADL<='0'; FC_ADL<='0';
         FD_ADL<='0'; FE_ADL<='0'; FF_ADL<='0'; S_ADL<='0'; ZERO_S<='0'; SB_S<='0'; 
         D_S<='0'; I_S<='0'; S_SB<='0'; NDB_ADD<='0'; DB_ADD<='0'; ADL_ADD<='0'; ONE_ADDC<='0';
-        DAA<='0'; DSA<='0'; SUMS<='0'; ANDS<='0'; EORS<='0'; ORS<='0'; SRS<='0'; RRS<='1'; RLS<='1';
+        DAA<='0'; DSA<='0'; SUMS<='0'; ANDS<='0'; EORS<='0'; ORS<='0'; SRS<='0'; RRS<='0'; RLS<='0';
         ADD_ADL<='0'; ADD_ADH<='0'; ADD_SB<='0'; FF_ADD<='0';
         ZERO_ADD<='0'; SB_ADD<='0'; SB_AC<='0'; DB_SB<='0'; ADH_SB<='0';
         AC_DB<='0'; AC_SB<='0'; SB_X<='0'; X_SB<='0'; SB_Y<='0'; Y_SB<='0';
@@ -486,35 +486,30 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                             
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
                         if(ACR_FLAG = '1') then                                                         -- If page crossed
                             ADD_ADH<= '1'; ADH_ABH<= '1';                                               -- Send Add Register to High Address Bus
@@ -525,7 +520,7 @@ begin
                         DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(0);    -- Add DL and Accumulator with carry
                         ACR_C<='1'; AVR_V<='1';                                                         -- Set C and V flags
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
@@ -765,45 +760,40 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                         
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
-                        if(ACR_FLAG = '1') then                                         -- If page crossed
-                            ADD_ADH<= '1'; ADH_ABH<= '1';                               -- Send Add Register to High Address Bus
+                        if(ACR_FLAG = '1') then                                                         -- If page crossed
+                            ADD_ADH<= '1'; ADH_ABH<= '1';                                               -- Send Add Register to High Address Bus
                         else 
-                            ADD_ADL<= '1'; ADL_ABL<= '1';                               -- Send Add Register to Low Address Bus
-                            DL_ADH<='1'; ADH_ABH<='1';                                  -- Send DL to High Address Bus
+                            ADD_ADL<= '1'; ADL_ABL<= '1';                                               -- Send Add Register to Low Address Bus
+                            DL_ADH<='1'; ADH_ABH<='1';                                                  -- Send DL to High Address Bus
                         end if;
-                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; ANDS<='1';    -- AND DL with Accumulator
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; ANDS<='1';                    -- AND DL with Accumulator
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
@@ -812,8 +802,8 @@ begin
                         CLR_ACR_FLAG<='1';
                         
                     when others =>
-                end case;              
-            
+                end case;         
+                   
             -- ASL INSTRUCTIONS
             when ASL_A =>
                 case cycle is
@@ -990,34 +980,33 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';         -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                              -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                 -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
-                    
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(0) = '0') then                                                -- if C='0' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(0) = '0') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
@@ -1041,42 +1030,40 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';         -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                              -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                 -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
-                    
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(0) = '1') then                                                -- if C='1' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(0) = '1') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC
                     end if;
                     CLR_ACR_FLAG<='1';
-                    CLR_Sign_Bit_Flag<='1';                     
+                    CLR_Sign_Bit_Flag<='1';                    
                 
                 when others =>
             end case;   
@@ -1093,42 +1080,40 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';          -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                               -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                  -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
-                    
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(1) = '1') then                                                -- if Z='1' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(1) = '1') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC
                     end if;
                     CLR_ACR_FLAG<='1';
-                    CLR_Sign_Bit_Flag<='1';                     
+                    CLR_Sign_Bit_Flag<='1';                  
                 
                 when others =>
             end case;
@@ -1145,41 +1130,40 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';          -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                               -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                  -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
-                    
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(7) = '1') then                                                -- if N='1' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(7) = '1') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC
                     end if;
                     CLR_ACR_FLAG<='1';
-                    CLR_Sign_Bit_Flag<='1';                     
+                    CLR_Sign_Bit_Flag<='1';                  
                 
                 when others =>
             end case;         
@@ -1196,41 +1180,40 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';          -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                               -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                  -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(1) = '0') then                                                -- if Z='0' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(1) = '0') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC
                     end if;
                     CLR_ACR_FLAG<='1';
-                    CLR_Sign_Bit_Flag<='1';                     
+                    CLR_Sign_Bit_Flag<='1';                    
                 
                 when others =>
             end case;
@@ -1247,42 +1230,41 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';          -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                               -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                  -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit
                     
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(7) = '0') then                                                -- if N='0' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(7) = '0') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC
                     end if;
                     CLR_ACR_FLAG<='1';
-                    CLR_Sign_Bit_Flag<='1';                     
+                    CLR_Sign_Bit_Flag<='1';                    
                 
                 when others =>
             end case;
@@ -1299,42 +1281,40 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';          -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                               -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                  -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
-                    
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit                   
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(6) = '0') then                                                -- if V='0' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(6) = '0') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC
                     end if;
                     CLR_ACR_FLAG<='1';
-                    CLR_Sign_Bit_Flag<='1';                     
+                    CLR_Sign_Bit_Flag<='1';                    
                 
                 when others =>
             end case;
@@ -1351,35 +1331,33 @@ begin
                     PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                          -- Increment PC
                     
                 when 1 =>
-                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';          -- Add DL and PCL
-                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then
+                    if((ACR = '1' and DB_Sign_Bit = '0') or (ACR = '0' and DB_Sign_Bit = '1')) then    -- If Page cross occured
                         cycle_increment<='1';
-                        SET_ACR_FLAG<=ACR;                                                               -- Save ACR
-                        SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                  -- Save Sign Bit
                     else
                         cycle_skip<='1';
                     end if;
-                    
+                    DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; PCL_ADL<='1'; ADL_ADD<='1'; SUMS<='1';        -- Add DL and PCL
+                    SET_ACR_FLAG<=ACR;                                                                 -- Save ACR
+                    SET_Sign_Bit_Flag<=DB_Sign_Bit;                                                    -- Save Sign Bit                   
                     
                 when 2 =>
                     cycle_increment<='1';
-                    ADD_ADL<='1'; ADL_PCL<='1';                                      -- Send ADD to PCL                                                 
-
-                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                  -- page cross occured to upper page
-                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1';      -- Add 1 to PCH                  
-                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then               -- page cross occured to lower page
-                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1';                       -- Substract 1 from ACR_FLAG
+                    ADD_ADL<='1'; ADL_PCL<='1';                                             -- Send ADD to PCL                                                 
+                    if(Sign_Bit_Flag = '0' and ACR_FLAG = '1') then                         -- page cross occured to upper page
+                        PCH_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<='1'; SUMS<='1';  -- Add 1 to PCH                  
+                    elsif(Sign_Bit_Flag = '1' and ACR_FLAG = '0') then                      -- page cross occured to lower page
+                        PCH_DB<='1'; DB_ADD<='1'; FF_ADD<='1'; SUMS<='1';                   -- Substract 1 from PCH
                     end if;
                 
                 when 3 =>
                     cycle_reset<='1';
-                    if(P(6) = '1') then                                                -- if V='1' branch
-                        if(ACR_FLAG = '1') then
-                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                     -- Increment PC
+                    if(P(6) = '1') then                                                                                 -- if C='0' branch
+                        if((ACR_FLAG = '1' and Sign_Bit_FLAG = '0') or (ACR_FLAG = '0' and Sign_Bit_FLAG = '1')) then   -- if page cross occured
+                            PCL_ADL<='1'; ADL_ABL<='1';  ADD_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            PCL_PCL<='1'; I_PC<='1'; ADH_PCH<='1';                                                      -- Increment PC
                         else
-                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send new PC to Addressbus
-                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                     -- Increment PC                            
+                            ADD_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';                                    -- Send new PC to Addressbus
+                            ADL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                                      -- Increment PC                            
                         end if;
                     else
                         PCL_ADL<='1'; ADL_ABL<='1';  PCH_ADH<='1'; ADH_ABH<='1';   -- Send PC to Addressbus
@@ -1441,6 +1419,7 @@ begin
                     end if;   
                     ADL_ABL<='1'; ADH_ABH<='1';              
                     DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';      -- Send DL to Add register 
+                    ONE_I<='1';                                             -- Disable interrupts
                 
                 when 5 =>
                     cycle_increment<='1';
@@ -1465,8 +1444,7 @@ begin
                         CLR_nmi_initiated <= '1';
                     elsif(irq_initiated = '1') then
                         CLR_irq_initiated <= '1';       
-                    end if;    
-                    ONE_I<='1';                                                -- Disable interrupts
+                    end if;
                 
                 when others =>
             end case;    
@@ -1802,34 +1780,30 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                       
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                            
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
                         if(ACR_FLAG = '1') then                                                         -- If page crossed
                             ADD_ADH<= '1'; ADH_ABH<= '1';                                               -- Send Add Register to High Address Bus
@@ -1840,14 +1814,14 @@ begin
                         DL_DB<='1'; NDB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC <='1';   -- Sub DL from Accumulator
                         ACR_C<='1';                                                                     -- Set C flag
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
                         ADD_SB<='1'; SB_DB<='1';                                 -- Send Add Register to data bus
                         DBZ_Z<='1'; DB7_N<='1';                                  -- Set Z and N flags
                         CLR_ACR_FLAG<='1';
-                                                
+                        
                     when others =>
                 end case;
             
@@ -2407,45 +2381,40 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                             
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
-                        if(ACR_FLAG = '1') then                                       -- If page crossed
-                            ADD_ADH<= '1'; ADH_ABH<= '1';                             -- Send Add Register to High Address Bus
+                        if(ACR_FLAG = '1') then                                                         -- If page crossed
+                            ADD_ADH<= '1'; ADH_ABH<= '1';                                               -- Send Add Register to High Address Bus
                         else 
-                            ADD_ADL<= '1'; ADL_ABL<= '1';                             -- Send Add Register to Low Address Bus
-                            DL_ADH<='1'; ADH_ABH<='1';                                -- Send DL to High Address Bus
+                            ADD_ADL<= '1'; ADL_ABL<= '1';                                               -- Send Add Register to Low Address Bus
+                            DL_ADH<='1'; ADH_ABH<='1';                                                  -- Send DL to High Address Bus
                         end if;
-                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; EORS<='1';  -- XOR DL and Accumulator 
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; EORS<='1';                    -- XOR DL and Accumulator 
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
@@ -2454,7 +2423,7 @@ begin
                         CLR_ACR_FLAG<='1';
                         
                     when others =>
-                end case;   
+                end case;  
                 
             -- INCREMENT INSTRUCTIONS
             when INC_ZPG =>
@@ -2938,7 +2907,7 @@ begin
                         cycle_increment<= '1';   
                         DL_ADH<= '1';  ADH_ABH<= '1';                                                   -- Send DL to High Address bus
                         ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add register to low address bus
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';                            -- Add DL and Zero
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';                              -- Add DL and Zero
                         
                     when 5 => 
                         cycle_reset<= '1';
@@ -2955,35 +2924,30 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                          
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
                         if(ACR_FLAG = '1') then                                                         -- If page crossed
                             ADD_ADH<= '1'; ADH_ABH<= '1';                                               -- Send Add Register to High Address Bus
@@ -2991,9 +2955,9 @@ begin
                             ADD_ADL<= '1'; ADL_ABL<= '1';                                               -- Send Add Register to Low Address Bus
                             DL_ADH<='1'; ADH_ABH<='1';                                                  -- Send DL to High Address Bus
                         end if;
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';                            -- Add DL and Zero
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';                              -- Add DL and Zero
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
@@ -3002,7 +2966,7 @@ begin
                         CLR_ACR_FLAG<='1';
                         
                     when others =>
-                end case;                 
+                end case;               
 
             when LDX_IMM =>
                 case cycle is
@@ -3699,45 +3663,40 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                             
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
-                        if(ACR_FLAG = '1') then                                         -- If page crossed
-                            ADD_ADH<= '1'; ADH_ABH<= '1';                               -- Send Add Register to High Address Bus
-                        else 
-                            ADD_ADL<= '1'; ADL_ABL<= '1';                               -- Send Add Register to Low Address Bus
-                            DL_ADH<='1'; ADH_ABH<='1';                                  -- Send DL to High Address Bus
+                        if(ACR_FLAG = '1') then                                            -- If page crossed
+                            ADD_ADH<= '1'; ADH_ABH<= '1';                                  -- Send Add Register to High Address Bus
+                        else
+                            ADD_ADL<= '1'; ADL_ABL<= '1';                                  -- Send Add Register to Low Address Bus
+                            DL_ADH<='1'; ADH_ABH<='1';                                     -- Send DL to High Address Bus
                         end if;
-                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; ORS<='1';     -- Or DL and Accumulator 
+                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; ORS<='1';        -- Or DL and Accumulator 
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
@@ -3746,7 +3705,7 @@ begin
                         CLR_ACR_FLAG<='1';
                         
                     when others =>
-                end case;      
+                end case;     
                 
             -- PUSH-PULL INSTRUCTIONS
             when PHA_IMPL =>
@@ -4491,35 +4450,30 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
-                    when 2 => 
-                        cycle_increment<= '1';   
-                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
-                        SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                          
                         
-                    when 3 =>                        
-                        if(ACR_FLAG = '1') then      -- If page crossed
+                    when 2 => 
+                        if(ACR = '1') then                  -- If page crossed
                             cycle_increment<='1';                                   
                         else
                             cycle_skip<='1';
-                        end if;
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        end if;   
+                        ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
+                        SUMS<= '1';                         -- Send Sum result to add register
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1';            -- Add 1 to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                   -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<= '1'; SUMS<= '1'; -- Add 1 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
                         if(ACR_FLAG = '1') then                                                         -- If page crossed
                             ADD_ADH<= '1'; ADH_ABH<= '1';                                               -- Send Add Register to High Address Bus
@@ -4530,7 +4484,7 @@ begin
                         DL_DB<='1'; NDB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(0);   -- Subtract DL from Accumulator with carry
                         ACR_C<='1'; AVR_V<='1';                                                         -- Set C and V flags
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
@@ -4539,7 +4493,7 @@ begin
                         CLR_ACR_FLAG<='1';
                         
                     when others =>
-                end case;        
+                end case;       
             
             when SEC_IMPL =>
                 case cycle is
@@ -4712,9 +4666,8 @@ begin
                         
                     when 3 =>
                         cycle_increment<= '1';  
-                        ADD_ADH<= '1'; ADH_ABH<= '1';                                                   -- Send Add Register to High Address Bus
-                        DL_DB<='1'; DB_ADD<='1'; AC_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(0);    -- Add DL and Accumulator with carry
-                        ACR_C<='1'; AVR_V<='1';                                                         -- Set C and V flags
+                        ADD_ADH<= '1'; ADH_ABH<= '1';        -- Send Add Register to High Address Bus
+                        AC_DB<='1'; r_nw<='0';               -- Send Accumulator to data bus 
                     
                     when 4 =>
                         cycle_reset<= '1';
@@ -4767,43 +4720,38 @@ begin
                         cycle_increment<= '1';    
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';                   -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                                    -- Increment PC  
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL
-                        
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; ONE_ADDC<= '1'; SUMS<= '1';       -- Add 1 to DL                        
                         
                     when 1 =>
                         cycle_increment<= '1';   
                         DL_ADL<= '1'; ADL_ABL<= '1';                               -- Send DL to Low Address bus
                         ZERO_ADH<= '1'; ADH_ABH<= '1';                             -- Send 0 to High address bus
-                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register
-                                                    
+                        DL_DB<= '1'; DB_ADD<= '1'; Y_SB<= '1'; SB_ADD<= '1';       -- Send DL to BI register and Y to AI register                            
+                        
                     when 2 => 
-                        cycle_increment<= '1';   
+                        cycle_increment<='1';                                    
                         ADD_ADL <='1'; ADL_ABL <='1';       -- Send add register to low address bus
                         SUMS<= '1';                         -- Send Sum result to add register
-                        SET_ACR_FLAG<=ACR;                  -- Save ACR
-                        
-                    when 3 =>                        
-                        cycle_increment<='1';                                   
-                        DL_DB<= '1'; DB_ADD<= '1';   -- send DL to BI register     
-                         
-                    when 4 =>   
+                        SET_ACR_FLAG<=ACR;                  -- Save ACR 
+
+                    when 3 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1';                          -- Send Add Register to Low Address Bus
-                        ZERO_ADD<= '1'; ONE_ADDC<=ACR_FLAG; SUMS<= '1';        -- Add carry to high address                                     
+                        ADD_ADL<= '1'; ADL_ABL<= '1';                                                       -- Send Add Register to Low Address Bus
+                        D_DL<='0'; DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<= '1'; ONE_ADDC<=ACR_FLAG; SUMS<= '1'; -- Add 1 or 0 to high address                                     
                         
-                    when 5 =>
+                    when 4 =>
                         cycle_increment<= '1';  
-                        ADD_ADH<= '1'; ADH_ABH<= '1';     -- Send Add Register to High Address Bus
-                        AC_DB<='1'; r_nw<='0';            -- Send Accumulator to data bus 
+                        ADD_ADH<= '1'; ADH_ABH<= '1';           -- Send Add Register to High Address Bus
+                        AC_DB<='1'; r_nw<='0';                  -- Send Accumulator to data bus 
                     
-                    when 6 =>
+                    when 5 =>
                         cycle_reset<= '1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                   -- Increment PC
                         CLR_ACR_FLAG<='1';
                         
                     when others =>
-                end case;                          
+                end case;                       
                 
             when STX_ZPG =>
                 case cycle is
@@ -5033,8 +4981,7 @@ begin
                      
                      when others =>   
                  end case;
-            
-                              
+                                   
             -- Illegal Opcodes (Do nothing just skip it)          
             when others =>
                 case cycle is
@@ -5049,19 +4996,24 @@ begin
                     when others =>
                 end case; 
                 
-        end case;               
-        
-            
-        
-        
-        
+        end case;                     
              
-        --These are Overriding control signals decided by decoder
+             
+        --These are Overriding control signals set by decoder based on special cases
         if(rdy = '0') then
-            --If cpu is not ready then prevent PCL, PHL and ADD registers from change
+            --If cpu is not ready then prevent registers from change
             cycle_increment <= '0'; cycle_reset <= '0'; cycle_skip <= '0';
+            D_DL <= '0';
             PCL_PCL <= '1'; PCH_PCH <= '1'; ADL_PCL <= '0'; ADH_PCH <= '0'; I_PC <= '0';
-            SUMS <= '0'; ANDS <= '0'; EORS <= '0'; ORS <= '0'; SRS <= '0';
+            SUMS <= '0'; ANDS <= '0'; EORS <= '0'; ORS <= '0'; SRS <= '0'; RRS <='0'; RLS <= '0';
+            D_S <= '0'; I_S <= '0'; SB_S <= '0';
+            SB_X <= '0'; SB_Y <= '0'; SB_AC <= '0';
+            DB0_C <= '0'; ZERO_C <= '0'; ONE_C <= '0'; ACR_C <= '0'; 
+            DB1_Z <= '0'; DBZ_Z <= '0'; 
+            DB2_I <= '0'; ZERO_I <= '0'; ONE_I <= '0'; 
+            DB3_D <= '0'; ZERO_D <= '0'; ONE_D <= '0'; 
+            DB6_V <= '0'; AVR_V <= '0'; ZERO_V <= '0'; ONE_V <= '0'; 
+            DB7_N <= '0'; 
         elsif(cycle_reset = '1' and (nmi_flag = '1' or irq_flag = '1')) then
             --Prevent PC increment in order to make return address right for interrupts
             I_PC <= '0';
@@ -5069,7 +5021,9 @@ begin
     end process;
     
    
-    -- Flag control process
+   
+   
+    -- Internal flag control process
     process(clk) begin
         if(rising_edge(clk) and clk_ph1 = '0') then --rising edge ph1
             if(rst = '1') then
@@ -5081,13 +5035,13 @@ begin
             else
                 if(SET_ACR_FLAG = '1') then
                     ACR_FLAG <= '1';
-                elsif(CLR_ACR_FLAG <= '1') then
+                elsif(CLR_ACR_FLAG = '1') then
                     ACR_FLAG <= '0';
                 end if;
                 
                 if(SET_Sign_Bit_Flag = '1') then
                     Sign_Bit_Flag <= '1';
-                elsif(CLR_Sign_Bit_Flag <= '1') then
+                elsif(CLR_Sign_Bit_Flag = '1') then
                     Sign_Bit_Flag <= '0';
                 end if;
                 

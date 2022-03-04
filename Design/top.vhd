@@ -6,7 +6,6 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity top is
     port(
         clk: in std_logic;    
-        irq: in std_logic;
         data_out: out std_logic_vector(7 downto 0)
     );
 end top;
@@ -26,7 +25,7 @@ begin
         clk => clk,
         BE => '1',
         rdy => '1',
-        irq => irq,
+        irq => '1',
         nmi => '1',
         sync => open,
         r_nw => r_nw,
@@ -34,11 +33,12 @@ begin
         data => data
     );
     
+    
     b: entity work.RAM
     port map(
         clk => clk,
         WE => w_nr,
-        enable => '1',
+        enable =>  std_logic'('1'),
         address => address,
         data => data        
     );

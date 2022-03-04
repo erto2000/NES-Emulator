@@ -28,10 +28,10 @@ architecture Behavioral of CPU is
     signal r_nw_signal      : std_logic; 
  
     --Registers(Flip Flop)--
-    signal PCLS, PCHS, ABL_REG, ABH_REG, AI_REG, BI_REG, ADD, P, X, Y, AC: std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    signal PCL, PCH, PCLS, PCHS, ABL_REG, ABH_REG, AI_REG, BI_REG, ADD, S, P, X, Y, AC: std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     
     --Registeres(Latch)--
-    signal PD, DL, DOR, ABL, ABH, PCL, PCH, S, AI, BI: std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+    signal PD, DL, DOR, ABL, ABH, AI, BI: std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
     
     --Busses--
     signal DB, SB, ADL, ADH  : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -60,7 +60,7 @@ architecture Behavioral of CPU is
     signal nmi_flag_clr : std_logic;
     
     --CONTROL SIGNALS--
-    signal DL_DB, DL_ADL, DL_ADH, ZERO_ADH                      : std_logic;
+    signal D_DL, DL_DB, DL_ADL, DL_ADH, ZERO_ADH                : std_logic;
     signal ONE_ADH, FF_ADH, ADH_ABH                             : std_logic;
     signal ADL_ABL, PCL_PCL, ADL_PCL                            : std_logic;
     signal I_PC, PCL_DB, PCL_ADL, BI_ADL                        : std_logic;
@@ -87,7 +87,7 @@ begin
     data <= DOR when (BE and not r_nw_signal) = '1' else
             (others => 'Z');
           
-    DL <= data when clk_ph2 = '1' else
+    DL <= data when D_DL = '1' and clk_ph2 = '1' else
           DL;
           
     PD <= data when clk_ph2 = '1' else
@@ -184,7 +184,7 @@ begin
             AI_REG <= AI;   
             BI_REG <= BI;
             
-            ADD <= ALU_OUT when (SUMS or ANDS or EORS or ORS or SRS) = '1'; 
+            ADD <= ALU_OUT when (SUMS or ANDS or EORS or ORS or SRS or RRS or RLS) = '1'; 
             
             S <= S - 1 when D_S = '1' else
                  S + 1 when I_S = '1' else
@@ -225,7 +225,8 @@ begin
             P(7) <= DB(7) when DB7_N = '1';
         end if;
     end process;
-            
+    
+    -- Sub Blocks
     clk_generation: process(clk) begin
         if(rising_edge(clk)) then
             clk_ph1 <= not clk_ph1;    
@@ -300,6 +301,7 @@ begin
         cycle_rst         => cycle_reset,
         nmi_flag_clr      => nmi_flag_clr,
         r_nw              => r_nw_signal,
+        D_DL              => D_DL,
         DL_DB             => DL_DB,
         DL_ADL            => DL_ADL,
         DL_ADH            => DL_ADH,
@@ -343,6 +345,8 @@ begin
         EORS              => EORS,
         ORS               => ORS,
         SRS               => SRS,
+        RRS               => RRS,
+        RLS               => RLS,
         ADD_ADL           => ADD_ADL,
         ADD_ADH           => ADD_ADH,
         ADD_SB            => ADD_SB,
