@@ -50,29 +50,29 @@ begin
     port map(
         clk => clk,
         WE => w_nr,
-        enable =>  std_logic'('1'),
+        CS =>  std_logic'('1'),
         address => address,
         data => data        
     );
     
-    P_C: entity work.PPU
-    port map(
-        rst             => '0',
-        clk             => clk,
-        CS              => CS,
-        r_nw            => r_nw,         
-        address         => address,      
-        NMI             => NMI,          
-        ALE             => ALE,          
-        PPU_add         => PPU_add,      
-        R               => R,      
-        G               => G,
-        B               => B, 
-        VRAM_r_nw       => VRAM_r_nw,    
-        VRAM_address    => VRAM_address, 
-        VRAM_data       => VRAM_data,    
-        data            => data         
-    );
+--    P_C: entity work.PPU
+--    port map(
+--        rst             => '0',
+--        clk             => clk,
+--        CS              => CS,
+--        r_nw            => r_nw,         
+--        address         => address,      
+--        NMI             => NMI,          
+--        ALE             => ALE,          
+--        PPU_add         => PPU_add,      
+--        R               => R,      
+--        G               => G,
+--        B               => B, 
+--        VRAM_r_nw       => VRAM_r_nw,    
+--        VRAM_address    => VRAM_address, 
+--        VRAM_data       => VRAM_data,    
+--        data            => data         
+--    );
 
 end Behavioral;
 

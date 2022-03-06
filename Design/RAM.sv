@@ -5,7 +5,7 @@ module RAM #(
 (
     input clk,
     input WE,
-    input enable,
+    input CS,
     input[ADDRESS_WIDTH-1:0] address,
     inout[DATA_WIDTH-1:0] data
 );   
@@ -24,10 +24,10 @@ module RAM #(
         end
     end
     
-    assign data = (enable && !WE) ? out : {DATA_WIDTH{1'bz}};
+    assign data = (CS && !WE) ? out : {DATA_WIDTH{1'bz}};
     
     always @(posedge clk) begin
-        if(enable == 1 && WE == 1) begin
+        if(CS == 1 && WE == 1) begin
             ram[address] <= data;
         end        
         
