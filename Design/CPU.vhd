@@ -22,6 +22,7 @@ end CPU;
 
 architecture Behavioral of CPU is
     --Internal Signals--
+    signal clk_counter      : integer range 0 to 11 := 0; -- Master clock tick
     signal clk_ph1          : std_logic := '1';
     signal clk_ph2          : std_logic := '0';
     signal rdy_signal       : std_logic;
@@ -162,7 +163,7 @@ begin
             '0';
     
     process(clk) begin
-        if(rising_edge(clk) and clk_ph1 = '1') then -- Falling edge ph1 
+        if(rising_edge(clk) and clk_counter = 5) then -- rising edge ph2 
             ABL_REG <= ABL;
             ABH_REG <= ABH;
             
@@ -177,7 +178,7 @@ begin
             AC <= SB when SB_AC = '1';    
         end if;
     
-        if(rising_edge(clk) and clk_ph2 = '1') then -- Falling edge ph2
+        if(rising_edge(clk) and clk_counter = 11) then -- rising edge ph1
             PCL <= PCL_Logic_Output;
             PCH <= PCH_Logic_Output;
                        
@@ -229,8 +230,12 @@ begin
     -- Sub Blocks
     clk_generation: process(clk) begin
         if(rising_edge(clk)) then
-            clk_ph1 <= not clk_ph1;    
-            clk_ph2 <= not clk_ph2;    
+            clk_counter <= clk_counter + 1;
+        
+            if(clk_counter = 5 or clk_counter = 11) then
+                clk_ph1 <= not clk_ph1;    
+                clk_ph2 <= not clk_ph2;    
+            end if;
         end if;
     end process;
     
@@ -255,7 +260,7 @@ begin
     port map(
         rst               => rst,
         clk               => clk,
-        clk_ph1           => clk_ph1,
+        clk_counter       => clk_counter,
         PD                => PD,
         irq_flag          => irq_flag,
         nmi_flag          => nmi_flag,
@@ -272,7 +277,7 @@ begin
     port map(
         rst          => rst,
         clk          => clk,
-        clk_ph1      => clk_ph1,
+        clk_counter  => clk_counter,
         irq          => irq,
         nmi          => nmi,
         irq_disable  => P(2),
@@ -285,7 +290,7 @@ begin
     port map(
         rst               => rst,
         clk               => clk,
-        clk_ph1           => clk_ph1,
+        clk_counter       => clk_counter,
         rdy               => rdy_signal,
         irq_flag          => irq_flag,
         nmi_flag          => nmi_flag,

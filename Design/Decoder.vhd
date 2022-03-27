@@ -8,7 +8,8 @@ entity Decoder is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk, clk_ph1              : in std_logic;
+        rst, clk                       : in std_logic;
+        clk_counter                    : in integer;
         rdy                            : in std_logic;
         irq_flag, nmi_flag             : in std_logic;
         ACR                            : in std_logic;                                  -- Carry signal of ALU
@@ -5025,7 +5026,7 @@ begin
    
     -- Internal flag control process
     process(clk) begin
-        if(rising_edge(clk) and clk_ph1 = '0') then --rising edge ph1
+        if(rising_edge(clk) and clk_counter = 11) then --rising edge ph1
             if(rst = '1') then
                 ACR_FLAG <= '0';
                 Sign_Bit_Flag <= '0';
