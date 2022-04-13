@@ -3,19 +3,19 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.std_logic_misc.and_reduce;
+use IEEE.Std_Logic_TextIO.all;
 
 entity top is
     port(
-        clk, rst, rdy : in std_logic;    
+        clk, rst, irq : in std_logic;    
         data_out: out std_logic_vector(7 downto 0);
-        irq: out std_logic;
-        BE: in std_logic;
         hsync, vsync, sync : out std_logic;
         pixel_index : out std_logic_vector(7 downto 0)
     );
 end top;
 
 architecture Behavioral of top is
+    signal rdy_signal: std_logic;
     signal r_nw: std_logic;
     signal address: std_logic_vector(15 downto 0);
     signal NMI : std_logic;
@@ -27,13 +27,23 @@ architecture Behavioral of top is
     signal VRAM_address: std_logic_vector(13 downto 0);
     signal VRAM_data: std_logic_vector(7 downto 0);
     
+    signal RAM_select: std_logic;
+    signal PPU_select: std_logic;
+    signal DMA_select: std_logic;
 begin
-    P_A: entity work.CPU
+    RAM_select <= '1' when (x"0000" <= address and address < x"2000") or (x"4020" <= address or address < x"FFF") else
+                  '0';
+    PPU_select <= '1' when x"2000" <= address and address < 4000 else
+                  '0';
+    DMA_select <= '1' when address = x"4014" else
+                  '0';
+
+    CPU: entity work.CPU
     port map(
         rst => rst,
         clk => clk,
-        BE => BE,
-        rdy =>  rdy,
+        BE => rdy_signal,
+        rdy => rdy_signal,
         irq => irq,
         nmi => NMI,
         sync => sync,
@@ -42,21 +52,23 @@ begin
         data => data
     );
     
-    
-    P_B: entity work.RAM
+    CPU_memory: entity work.RAM
+    generic map(
+        ADDRESS_WIDTH => 16
+    )
     port map(
         clk => clk,
         WE => not r_nw,
-        CS =>  std_logic'('1'),
+        CS => RAM_select,
         address => address,
-        data => data        
+        data => data
     );
     
-    P_C: entity work.PPU
+    PPU: entity work.PPU
     port map(
         rst             => rst,
         clk             => clk,
-        CS              => address(13),
+        CS              => PPU_select,
         r_nw            => r_nw,         
         address         => address(2 downto 0),      
         NMI             => NMI,                
@@ -69,7 +81,7 @@ begin
         data            => data
     );
     
-    ppu_memory: entity work.RAM
+    PPU_memory: entity work.RAM
     generic map(
         ADDRESS_WIDTH => 14
     )
@@ -81,6 +93,15 @@ begin
         data    => VRAM_data        
     );
 
+    DMA: entity work.DMA
+    port map(
+        clk => clk,
+        CS => DMA_select,
+        rdy => rdy_signal,
+        r_nw => r_nw,
+        address => address,
+        data => data
+    );
 
 end Behavioral;
 

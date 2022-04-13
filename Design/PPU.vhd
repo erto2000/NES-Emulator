@@ -1,4 +1,4 @@
-library IEEE;
+	library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -190,7 +190,7 @@ begin
         if(CS = '1') then
             if(r_nw = '1') then -- If CPU is reading use data bus
                 data <= data_out;
-            elsif(rendering_active = '0' and clk_counter = 5) then -- If CPU is writing and ppu doesn't use RAMs
+            elsif(rendering_active = '0' and clk_counter = 5) then -- If CPU is writing and PPU doesn't use RAMs
                 if(address = "111") then -- PPUDATA
                     if(palette_address_selected = '0') then -- If address corresponds to VRAM
                         VRAM_r_nw <= '0';
@@ -206,7 +206,7 @@ begin
             end if;
         end if;
         
-        if(rendering_active = '0') then -- If ppu doesn't use rams
+        if(rendering_active = '0') then -- If PPU doesn't use rams
             VRAM_address <= v(13 downto 0);
             if(palette_address_selected = '1') then
                 palette_address <= v(4 downto 0);
@@ -228,7 +228,7 @@ begin
                                            sprite_pattern_shifter_high(i)(7) & sprite_pattern_shifter_low(i)(7);
                 selected_sprite_attribute <= sprite_attribute(i);
                 
-                if(sprite_zero_exist = '1' and i = 0 and selected_background_pattern = zero2) then
+                if(sprite_zero_exist = '1' and i = 0 and not(selected_background_pattern = zero2)) then
                     set_sprite_zero <= '1';
                 end if;
             end if;
@@ -261,7 +261,8 @@ begin
                 byte_counter <= 0;
             else
                 -- Master clock tick
-                clk_counter <= clk_counter + 1;
+                clk_counter <= clk_counter + 1 when clk_counter < 11 else
+                               0;
             
                 -- CPU tick
                 if(clk_counter = 5 and CS = '1') then 
@@ -483,7 +484,7 @@ begin
         horizontal_start_signal <= '0';
         
         set_sprite_overflow <= '0'; clr_sprite_overflow <= '0';
-        set_sprite_zero <= '0'; clr_sprite_zero <= '0';
+        clr_sprite_zero <= '0';
         set_vertical_blank <= '0'; clr_vertical_blank <= '0';
         set_sprite_zero_exist <= '0'; clr_sprite_zero_exist <= '0';
     
@@ -503,7 +504,7 @@ begin
         -- Decoder Logic
         if(vblank_set_cycle) then
             set_vertical_blank <= '1';
-        elsif(render_lines and PPUMASK(3) = '1' and PPUMASK(4) = '1') then     
+        elsif(render_lines and (PPUMASK(3) = '1' or PPUMASK(4) = '1')) then     
             rendering_active <= '1';
             
             if(cycle_counter = 0) then
@@ -612,6 +613,7 @@ begin
                     OAM_secondary_data <= x"FF";
                     OAM_secondary_address_increment <= '1';
                     clr_sprite_zero_exist <= '1';
+                    sprite_counter_reset <= '1';
                 end if;
                 
                 if(sprite_evaluation_cycles) then                                     

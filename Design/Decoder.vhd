@@ -15,7 +15,6 @@ entity Decoder is
         ACR                            : in std_logic;                                  -- Carry signal of ALU
         P                              : in std_logic_vector(7 downto 0);               -- Status Register
         DB_Sign_Bit                    : in std_logic;                                  -- Sign of DB signal
-        DB_First_Bit                   : in std_logic;                                  -- First bit of DB signal
         instruction                    : in std_logic_vector(DATA_WIDTH-1 downto 0);
         cycle                          : in integer range 0 to 7;
         cycle_increment                : out std_logic;
@@ -221,6 +220,7 @@ begin
         --Default Output Signals
         cycle_increment <= '0';
         cycle_skip <= '0';
+        cycle_double_skip <= '0';
         cycle_reset <= '0';
         cycle_rst <= cycle_reset;
         nmi_flag_clr <= '0';
@@ -229,6 +229,9 @@ begin
         CLR_ACR_FLAG<='0';
         SET_Sign_Bit_Flag<='0';
         CLR_Sign_Bit_Flag<='0';
+        CLR_rst_initiated <= '0';
+        CLR_nmi_initiated <= '0';
+        CLR_irq_initiated <= '0';
         
         --Default Control Signals
         D_DL<='1'; DL_DB<='0'; DL_ADL<='0'; DL_ADH<='0'; ZERO_ADH<='0';
@@ -838,12 +841,12 @@ begin
                     
                     when 2 =>
                         cycle_increment <= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data output register
-                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags
+                        -- Unnecessary cycle for this implementation
                     
                     when 3 =>
                         cycle_increment <= '1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data output register
+                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags
                         
                     when 4 =>        
                         cycle_reset <= '1';
@@ -869,8 +872,7 @@ begin
                     
                     when 2 =>
                         cycle_increment <= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';              -- Send Add Register to data output register
-                        DBZ_Z<='1'; DB7_N<='1';                          -- Set Z and N flags
+                        -- Unnecessary cycle for this implementation
                     
                     when 3 =>
                         cycle_increment <= '1'; 
@@ -878,7 +880,8 @@ begin
                         
                     when 4 =>
                         cycle_increment <= '1'; 
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';              -- Send Add Register to data output register
+                        DBZ_Z<='1'; DB7_N<='1';                          -- Set Z and N flags
                         
                     when 5 =>        
                         cycle_reset <= '1';
@@ -909,12 +912,12 @@ begin
                     
                     when 3 =>
                         cycle_increment <= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                              -- Send Add Register to data output register
-                        DBZ_Z<='1'; DB7_N<='1';                                          -- Set Z and N flags
+                        -- Unnecessary cycle for this implementation
                         
                     when 4 =>         
                         cycle_increment <= '1';  
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                              -- Send Add Register to data output register
+                        DBZ_Z<='1'; DB7_N<='1';                                          -- Set Z and N flags
                         
                     when 5 =>
                         cycle_reset <= '1';
@@ -952,12 +955,12 @@ begin
                     
                     when 4 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                              -- Send Add Register to data output register
-                        DBZ_Z<='1'; DB7_N<='1';                                          -- Set Z and N flags           
+                        -- Unnecessary cycle for this implementation
                   
                     when 5 =>         
                         cycle_increment <= '1';  
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                              -- Send Add Register to data output register
+                        DBZ_Z<='1'; DB7_N<='1';                                          -- Set Z and N flags   
                         
                     when 6 =>
                         cycle_reset <= '1';
@@ -1983,12 +1986,12 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';                                         
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 4 =>
                         cycle_reset<='1';
@@ -2013,8 +2016,7 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
@@ -2022,7 +2024,8 @@ begin
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -2052,12 +2055,12 @@ begin
                         
                     when 3 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -2104,12 +2107,12 @@ begin
                     
                     when 4 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 5 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags   
                         
                     when 6 =>
                         cycle_reset<='1';
@@ -2441,12 +2444,12 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';                                         
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 4 =>
                         cycle_reset<='1';
@@ -2471,8 +2474,7 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                         -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
@@ -2480,7 +2482,8 @@ begin
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags  
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -2510,12 +2513,13 @@ begin
                         
                     when 3 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 4 =>
                         cycle_increment<='1';
-                        
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags  
+                    
                     when 5 =>
                         cycle_reset<='1';
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';  -- Send PC to Addressbus
@@ -2561,12 +2565,12 @@ begin
                     
                     when 4 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 5 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags 
                         
                     when 6 =>
                         cycle_reset<='1';
@@ -3280,12 +3284,12 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';                                         
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 4 =>
                         cycle_reset<='1';
@@ -3311,8 +3315,7 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
@@ -3320,7 +3323,8 @@ begin
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -3351,12 +3355,12 @@ begin
                         
                     when 3 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags  
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -3404,12 +3408,12 @@ begin
                     
                     when 4 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 5 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags  
                         
                     when 6 =>
                         cycle_reset<='1';
@@ -3831,12 +3835,12 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';                                         
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
                         
                     when 4 =>
                         cycle_reset<='1';
@@ -3862,8 +3866,7 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                         -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
@@ -3871,7 +3874,8 @@ begin
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags  
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -3902,12 +3906,12 @@ begin
                         
                     when 3 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -3955,12 +3959,12 @@ begin
                     
                     when 4 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 5 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags  
                         
                     when 6 =>
                         cycle_reset<='1';
@@ -4004,12 +4008,11 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';                                         
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
-                        cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags  
                         
                     when 4 =>
                         cycle_reset<='1';
@@ -4035,8 +4038,7 @@ begin
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 3 =>
                         cycle_increment<='1';
@@ -4044,7 +4046,8 @@ begin
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags 
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -4075,12 +4078,12 @@ begin
                         
                     when 3 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 4 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags 
                         
                     when 5 =>
                         cycle_reset<='1';
@@ -4128,12 +4131,12 @@ begin
                     
                     when 4 =>
                         cycle_increment<='1';
-                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
-                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags   
+                        -- Unnecessary cycle for this implementation
                         
                     when 5 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_DB<='1'; r_nw<='0';        -- Send Add Register to data bus
+                        DBZ_Z<='1'; DB7_N<='1';                    -- Set Z and N flags
                         
                     when 6 =>
                         cycle_reset<='1';
@@ -4568,12 +4571,12 @@ begin
                         
                     when 1 =>
                         cycle_increment<= '1';
-                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';  -- Send Add register to low address bus, send zero to high address bus     
-                        AC_DB<='1'; r_nw<='0';                                        -- Send Accumulator to data bus 
+                        -- Unnecessary cycle for this implementation
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';  -- Send Add register to low address bus, send zero to high address bus     
+                        AC_DB<='1'; r_nw<='0';                                        -- Send Accumulator to data bus 
                         
                     when 3 =>
                         cycle_reset<= '1';
@@ -4783,12 +4786,12 @@ begin
                         
                     when 1 =>
                         cycle_increment<= '1';
-                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';  -- Send Add register to low address bus, send zero to high address bus     
-                        X_SB<='1'; SB_DB<='1'; r_nw<='0';                             -- Send X register to data bus   
+                        -- Unnecessary cycle for this implementation
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';  -- Send Add register to low address bus, send zero to high address bus     
+                        X_SB<='1'; SB_DB<='1'; r_nw<='0';                             -- Send X register to data bus   
                         
                     when 3 =>
                         cycle_reset<= '1';
@@ -4853,12 +4856,12 @@ begin
                         
                     when 1 =>
                         cycle_increment<= '1';
-                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';  -- Send Add register to low address bus, send zero to high address bus     
-                        Y_SB<='1'; SB_DB<='1'; r_nw<='0';                             -- Send Y register to data bus   
+                        -- Unnecessary cycle for this implementation
                         
                     when 2 =>
                         cycle_increment<= '1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';  -- Send Add register to low address bus, send zero to high address bus     
+                        Y_SB<='1'; SB_DB<='1'; r_nw<='0';                             -- Send Y register to data bus   
                         
                     when 3 =>
                         cycle_reset<= '1';
@@ -5003,7 +5006,7 @@ begin
         --These are Overriding control signals set by decoder based on special cases
         if(rdy = '0') then
             --If cpu is not ready then prevent registers from change
-            cycle_increment <= '0'; cycle_reset <= '0'; cycle_skip <= '0';
+            cycle_increment <= '0'; cycle_reset <= '0'; cycle_skip <= '0'; cycle_double_skip <= '0';
             D_DL <= '0';
             PCL_PCL <= '1'; PCH_PCH <= '1'; ADL_PCL <= '0'; ADH_PCH <= '0'; I_PC <= '0';
             SUMS <= '0'; ANDS <= '0'; EORS <= '0'; ORS <= '0'; SRS <= '0'; RRS <='0'; RLS <= '0';
@@ -5049,7 +5052,6 @@ begin
                 if(cycle_reset = '1') then
                     if(nmi_flag = '1') then
                         nmi_initiated <= '1';
-                        nmi_flag_clr <='1';
                     elsif(irq_flag = '1') then
                         irq_initiated <= '1';
                     end if;

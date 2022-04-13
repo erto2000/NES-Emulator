@@ -230,7 +230,8 @@ begin
     -- Sub Blocks
     clk_generation: process(clk) begin
         if(rising_edge(clk)) then
-            clk_counter <= clk_counter + 1;
+            clk_counter <= clk_counter + 1 when clk_counter < 11 else
+                           0;
         
             if(clk_counter = 5 or clk_counter = 11) then
                 clk_ph1 <= not clk_ph1;    
@@ -297,7 +298,6 @@ begin
         ACR               => ACR,
         P                 => P,
         DB_Sign_Bit       => DB(7),
-        DB_First_Bit      => DB(0),
         instruction       => instruction,
         cycle             => cycle,
         cycle_increment   => cycle_increment,
