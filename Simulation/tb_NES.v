@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module tb_top;
+module tb_NES;
     
     reg clk = 0, rdy = 1;
     wire[7:0] data_out, pixel_index;

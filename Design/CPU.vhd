@@ -10,7 +10,7 @@ entity CPU is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk  : in std_logic;
+        clk, rst  : in std_logic;
         BE, rdy   : in std_logic;
         irq, nmi  : in std_logic;
         sync      : out std_logic;

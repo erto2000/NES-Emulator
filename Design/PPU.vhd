@@ -1,4 +1,4 @@
-	library IEEE;
+library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -6,10 +6,10 @@ use IEEE.std_logic_misc.and_reduce;
 
 entity PPU is
     port(
-        rst, clk        : in std_logic;
+        clk, rst        : in std_logic;
         CS, r_nw        : in std_logic;
         address         : in std_logic_vector(2 downto 0);
-        NMI             : out std_logic;
+        nmi             : out std_logic;
         hsync, vsync    : out std_logic;
         pixel_index     : out std_logic_vector(7 downto 0);
         VRAM_r_nw       : out std_logic;
@@ -181,7 +181,7 @@ begin
         VRAM_data_reversed <= VRAM_data; -- Assign reverse of VRAM_data (indexes are reversed look to declerations)
         set_sprite_zero <= '0';
         
-        NMI <= '0' when PPUCTRL(7) = '1' and PPUSTATUS(7) = '1' else
+        nmi <= '0' when PPUCTRL(7) = '1' and PPUSTATUS(7) = '1' else
                '1';
     
         palette_address_selected <= '1' when and_reduce(v(13 downto 8)) else
@@ -681,7 +681,7 @@ begin
         data    => OAM_secondary_data
     );
     
-    palette_memory: entity work.RAM
+    Palette_memory: entity work.RAM
     generic map(
         ADDRESS_WIDTH => 5
     )
