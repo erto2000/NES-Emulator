@@ -22,14 +22,17 @@ entity Cartridge is
 end Cartridge;
 
 architecture Behavioral of Cartridge is
-
+    signal VRAM_Size : integer := 2;
 begin
     VRAM_CS <= PPU_address(13);
-    VRAM_A10 <= PPU_address(10); -- Based on file
+    VRAM_A10 <= '0'; --PPU_address(10); -- Based on file
 
     PRG_memory: entity work.RAM
     generic map(
-        ADDRESS_WIDTH => 15
+        DATA_WIDTH => 8,
+        ADDRESS_WIDTH => 15,
+        INITIALIZE_TYPE => 2,
+        INITIALIZE_FILE_INDEX => 1
     )
     port map(
         clk => clk,
@@ -41,7 +44,10 @@ begin
     
     CHR_memory: entity work.RAM
     generic map(
-        ADDRESS_WIDTH => 13
+        DATA_WIDTH => 8,
+        ADDRESS_WIDTH => 13,
+        INITIALIZE_TYPE => 2,
+        INITIALIZE_FILE_INDEX => 2
     )
     port map(
         clk => clk,

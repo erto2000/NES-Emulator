@@ -223,7 +223,6 @@ begin
         cycle_double_skip <= '0';
         cycle_reset <= '0';
         cycle_rst <= cycle_reset;
-        nmi_flag_clr <= '0';
         r_nw <= '1';
         SET_ACR_FLAG<='0';
         CLR_ACR_FLAG<='0';
@@ -232,6 +231,8 @@ begin
         CLR_rst_initiated <= '0';
         CLR_nmi_initiated <= '0';
         CLR_irq_initiated <= '0';
+        nmi_flag_clr <= '1' when cycle_reset = '1' and nmi_flag = '1' else
+                        '0';
         
         --Default Control Signals
         D_DL<='1'; DL_DB<='0'; DL_ADL<='0'; DL_ADH<='0'; ZERO_ADH<='0';
@@ -1517,6 +1518,20 @@ begin
                 
                 when others =>  
             end case;
+            
+        when CLD_IMPL =>
+            case cycle is
+                when 0 =>
+                    cycle_increment<= '1';    
+                    ZERO_D<= '1';                                                -- Clear carry flag
+                    
+                when 1 =>   
+                    cycle_reset<= '1';
+                    PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
+                    PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC 
+                
+                when others =>  
+            end case;
         
         when CLI_IMPL =>
             case cycle is
@@ -2676,13 +2691,13 @@ begin
                         cycle_increment<= '1'; 
                         S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';    -- Send Stack to Addressbus 
                         D_S<='1';                                                -- Decrement Stack
-                        PCL_DB<='1'; r_nw<='0';                                  -- Send PCL to data bus 
+                        PCH_DB<='1'; r_nw<='0';                                  -- Send PCH to data bus 
                          
                     when 2 =>   
                         cycle_increment<= '1'; 
                         S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';    -- Send Stack to Addressbus 
                         D_S<='1';                                                -- Decrement Stack
-                        PCH_DB<='1'; r_nw<='0';                                  -- Send PCH to data bus 
+                        PCL_DB<='1'; r_nw<='0';                                  -- Send PCL to data bus 
                     
                     when 3 =>
                         cycle_increment<= '1';
@@ -3757,18 +3772,17 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<='1';
-                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';    -- Send Stack to Addressbus 
                         I_S<='1';                                                -- Increment Stack
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';       -- Send DL to Add register
                         
                     when 1 =>
                         cycle_increment<='1'; 
-                        ADD_SB<='1'; SB_AC<='1';                                 -- Send Add Register to Accumulator
-                        AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                      -- Set Z and N flags
+                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';    -- Send Stack to Addressbus 
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';       -- Send DL to Add register
                         
                     when 2 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_SB<='1'; SB_AC<='1';                                 -- Send Add Register to Accumulator
+                        AC_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                      -- Set Z and N flags
                         
                     when 3 =>
                         cycle_reset<='1';
@@ -3782,13 +3796,12 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<='1';
-                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';                                 -- Send Stack to Addressbus 
                         I_S<='1';                                                                             -- Increment Stack
-                        DL_DB<='1'; DB0_C<='1'; DB1_Z<='1'; DB2_I<='1'; DB3_D<='1'; DB6_V<='1'; DB7_N<='1';   -- Send DL to P register
                         
                     when 1 =>
                         cycle_increment<='1'; 
-                        -- Unnecessary cycle for this implementation
+                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';                                 -- Send Stack to Addressbus                                                                             -- Increment Stack
+                        DL_DB<='1'; DB0_C<='1'; DB1_Z<='1'; DB2_I<='1'; DB3_D<='1'; DB6_V<='1'; DB7_N<='1';   -- Send DL to P register
                     
                     when 2 =>
                         cycle_increment<='1'; 
@@ -4011,6 +4024,7 @@ begin
                         -- Unnecessary cycle for this implementation
                         
                     when 3 =>
+                        cycle_increment<='1';
                         ADD_SB<='1'; SB_DB<='1'; r_nw<='0';                         -- Send Add Register to data bus
                         DBZ_Z<='1'; DB7_N<='1';                                     -- Set Z and N flags  
                         
@@ -4152,28 +4166,27 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<='1';
-                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';                                 -- Send Stack to Addressbus 
-                        I_S<='1';                                                                             -- Increment Stack
-                        DL_DB<='1'; DB0_C<='1'; DB1_Z<='1'; DB2_I<='1'; DB3_D<='1'; DB6_V<='1'; DB7_N<='1';   -- Send DL to P register
-                        
+                        I_S<='1';                -- Increment Stack
+
                     when 1 =>
                         cycle_increment<='1'; 
-                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';   -- Send Stack to Addressbus 
-                        I_S<='1';                                               -- Increment Stack
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';      -- Send DL to Add register
+                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';                                 -- Send Stack to Addressbus 
+                        DL_DB<='1'; DB0_C<='1'; DB1_Z<='1'; DB2_I<='1'; DB3_D<='1'; DB6_V<='1'; DB7_N<='1';   -- Send DL to P register
+                        I_S<='1';                                                                             -- Increment Stack
  
                     when 2 =>
                         cycle_increment<='1';
                         S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';   -- Send Stack to Addressbus 
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';      -- Send DL to Add register
                         I_S<='1';                                               -- Increment Stack
                     
                     when 3 =>
                         cycle_increment<='1';
-                        ADD_ADL<= '1'; ADL_PCL<='1'; DL_ADH<= '1'; ADH_PCH<='1';  -- Send Add register to PCL, send DL to PCH
+                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';   -- Send Stack to Addressbus 
                         
                     when 4 =>
                         cycle_increment<='1'; 
-                        -- Unnecessary cycle for this implementation
+                        ADD_ADL<= '1'; ADL_PCL<='1'; DL_ADH<= '1'; ADH_PCH<='1';  -- Send Add register to PCL, send DL to PCH
                                                 
                     when 5 =>
                         cycle_reset<='1';
@@ -4187,23 +4200,22 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<='1';
-                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';   -- Send Stack to Addressbus 
                         I_S<='1';                                               -- Increment Stack
-                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';      -- Send DL to Add register
                         
                     when 1 =>
                         cycle_increment<='1'; 
                         S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';   -- Send Stack to Addressbus 
-                        I_S<='1';                                               -- Increment Stack                       
- 
+                        DL_DB<='1'; DB_ADD<='1'; ZERO_ADD<='1'; SUMS<='1';      -- Send DL to Add register
+                        I_S<='1';                                               -- Increment Stack  
+                        
                     when 2 =>
                         cycle_increment<='1';
-                        ADD_ADL<= '1'; ADL_PCL<='1'; DL_ADH<= '1'; ADH_PCH<='1';  -- Send Add register to PCL, send DL to PCH
-                        I_PC<='1';                                                -- Increment PC  
+                        S_ADL<='1'; ADL_ABL<='1'; ONE_ADH<='1'; ADH_ABH<='1';   -- Send Stack to Addressbus 
                     
                     when 3 =>
                         cycle_increment<='1';
-                        -- Unnecessary cycle for this implementation
+                        ADD_ADL<= '1'; ADL_PCL<='1'; DL_ADH<= '1'; ADH_PCH<='1';  -- Send Add register to PCL, send DL to PCH
+                        I_PC<='1';                                                -- Increment PC  
                         
                     when 4 =>
                         cycle_increment<='1'; 
@@ -4499,16 +4511,17 @@ begin
                     when others =>
                 end case;       
             
+            -- Set instructions
             when SEC_IMPL =>
                 case cycle is
                     when 0 =>
                         cycle_increment<= '1';
+                        ONE_C <='1';
                         
                     when 1 =>
                         cycle_reset<= '1';                                         
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
-                        ONE_C <='1';
                     
                     when others =>   
                 end case;
@@ -4517,12 +4530,12 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<= '1';
-                        
+                        ONE_D <='1';
+                                                
                     when 1 =>
                         cycle_reset<= '1';                                         
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
-                        ONE_D <='1';
                     
                     when others =>   
                 end case;    
@@ -4531,12 +4544,12 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<= '1';
+                        ONE_I <='1';
                         
                     when 1 =>
                         cycle_reset<= '1';                                         
                         PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
                         PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
-                        ONE_I <='1';
                     
                     when others =>   
                 end case; 
@@ -5055,11 +5068,15 @@ begin
                     elsif(irq_flag = '1') then
                         irq_initiated <= '1';
                     end if;
-                elsif(CLR_rst_initiated = '1') then
+                end if;
+                
+                if(CLR_rst_initiated = '1') then
                     rst_initiated <= '0';
-                elsif(CLR_nmi_initiated = '1') then
+                end if;
+                if(CLR_nmi_initiated = '1') then
                     nmi_initiated <= '0';
-                elsif(CLR_irq_initiated = '1') then
+                end if;
+                if(CLR_irq_initiated = '1') then
                     irq_initiated <= '0';
                 end if;
             end if;    

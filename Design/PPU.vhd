@@ -23,7 +23,13 @@ architecture Behavioral of PPU is
     -- Types
     type array8_vector8 is array(7 downto 0) of std_logic_vector(7 downto 0);
     type array8_stdlogic is array(7 downto 0) of std_logic;
-
+    
+    -- Constants
+    constant last_cycle         : integer := 340;
+    constant pre_render_line    : integer := 261;
+    constant zero8              : std_logic_vector(7 downto 0) := (others => '0');
+    constant zero2              : std_logic_vector(1 downto 0) := (others => '0');
+    
     -- CPU interface registers
     signal PPUCTRL, PPUMASK, PPUSTATUS, OAMADDR : std_logic_vector(7 downto 0) := (others => '0');
     
@@ -34,7 +40,7 @@ architecture Behavioral of PPU is
     signal OAM_secondary_address    : std_logic_vector(4 downto 0) := (others => '0');
     signal sprite_counter           : integer range 0 to 7 := 0;
     signal sprite_evaluation_active : std_logic := '0';
-    signal sprite_zero_exist        : std_logic;
+    signal sprite_zero_exist        : std_logic := '0';
     signal previous_OAMADDR         : std_logic_vector(7 downto 0) := (others => '0');
 
     -- VRAM address registers
@@ -94,19 +100,13 @@ architecture Behavioral of PPU is
     signal fill_sprite_y_register, fill_sprite_tile_register                                                                : std_logic;
     signal fill_sprite_pattern_shifter_low, fill_sprite_pattern_shifter_high, fill_sprite_x_counter, fill_sprite_attribute  : array8_stdlogic;
     signal increment_horizontal_v, increment_vertical_v, set_horizontal_v, set_vertical_v                                   : std_logic; 
-    signal move_shift_registers, reload_shift_registers                                                                     : std_logic;
+    signal move_background_shift_registers, move_sprite_shift_registers, reload_shift_registers                             : std_logic;
     
     -- Sprite
     signal OAM_address_increment, OAM_address_increment_4, OAM_address_increment_5, OAM_address_reset   : std_logic;
     signal OAM_secondary_address_increment, OAM_secondary_address_reset                                 : std_logic;
-    signal byte_counter_increment, sprite_counter_increment, sprite_counter_reset                       : std_logic;
+    signal byte_counter_increment, byte_counter_reset, sprite_counter_increment, sprite_counter_reset   : std_logic;
     signal start_sprite_evaluation, stop_sprite_evaluation                                              : std_logic;
-    
-    -- Constants
-    constant last_cycle         : integer := 340;
-    constant pre_render_line    : integer := 261;
-    constant zero8              : std_logic_vector(7 downto 0) := (others => '0');
-    constant zero2              : std_logic_vector(1 downto 0) := (others => '0');
     
     -- Helper functions
     function select_attribute(signal v: std_logic_vector(14 downto 0); signal data: std_logic_vector(7 downto 0)) return std_logic_vector is
@@ -171,22 +171,22 @@ begin
         data <= (others => 'Z');
         VRAM_r_nw <= '1';
         VRAM_data <= (others => 'Z');
+        VRAM_data_reversed <= VRAM_data; -- Assign reverse of VRAM_data (indexes are reversed look to declerations)        
         VRAM_address <= VRAM_address_out;
-        palette_r_nw <= '1';
-        palette_data <= (others => 'Z');
-        palette_address <= '0' & palette_index(3 downto 2) & "00" when palette_index(4) = '1' and palette_index(1 downto 0) = "00" else
-                           palette_index;
         OAM_r_nw <= '1';
         OAM_data <= (others => 'Z');
-        VRAM_data_reversed <= VRAM_data; -- Assign reverse of VRAM_data (indexes are reversed look to declerations)
-        set_sprite_zero <= '0';
-        
-        nmi <= '0' when PPUCTRL(7) = '1' and PPUSTATUS(7) = '1' else
-               '1';
-    
+        palette_r_nw <= '1';
+        palette_data <= (others => 'Z');
+
+        palette_address <= '0' & palette_index(3 downto 2) & "00" when palette_index(4) = '1' and palette_index(1 downto 0) = "00" else
+                           palette_index;
+               
         palette_address_selected <= '1' when and_reduce(v(13 downto 8)) else
                                     '0';
-        
+
+        nmi <= '0' when PPUCTRL(7) = '1' and PPUSTATUS(7) = '1' else
+               '1';
+
         if(CS = '1') then
             if(r_nw = '1') then -- If CPU is reading use data bus
                 data <= data_out;
@@ -208,33 +208,32 @@ begin
         
         if(rendering_active = '0') then -- If PPU doesn't use rams
             VRAM_address <= v(13 downto 0);
-            if(palette_address_selected = '1') then
-                palette_address <= v(4 downto 0);
-            else
-                palette_address <= (others => '0');
-            end if;
+            palette_address <= v(4 downto 0);
         end if;
         
         -- Outputs of background shifters
-        selected_background_pattern <= "00" when PPUMASK(3) = '0' or (2 <= cycle_counter and cycle_counter <= 9 and PPUMASK(1) = '0') else
+        selected_background_pattern <= "00" when PPUMASK(3) = '0' or (PPUMASK(1) = '0' and 2 <= cycle_counter and cycle_counter <= 9) else
                                        background_pattern_shifter_high(15 - conv_integer(x)) & background_pattern_shifter_low(15 - conv_integer(x));
         selected_background_attribute <= background_attribute_shifter_high(8 - conv_integer(x)) & background_attribute_shifter_low(8 - conv_integer(x));
         
         -- Outputs of sprite shifters for 8 sprites
         for i in 7 downto 0 loop
+            selected_sprite_pattern <= (others => '0');
+            selected_sprite_attribute <= (others => '0');
+            set_sprite_zero <= '0';
             -- Output sprite with lowest index that is active and opaque
-            if(sprite_x_counter(i) = zero8 and (sprite_pattern_shifter_low(i)(7) = '1' or sprite_pattern_shifter_high(i)(7) = '1')) then 
-                selected_sprite_pattern <= "00" when PPUMASK(4) = '0' or (2 <= cycle_counter and cycle_counter <= 9 and PPUMASK(2) = '0') else
+            if(line_counter /= 0 and sprite_x_counter(i) = zero8 and (sprite_pattern_shifter_low(i)(7) = '1' or sprite_pattern_shifter_high(i)(7) = '1')) then 
+                selected_sprite_pattern <= "00" when PPUMASK(4) = '0' or (PPUMASK(2) = '0' and 2 <= cycle_counter and cycle_counter <= 9) else
                                            sprite_pattern_shifter_high(i)(7) & sprite_pattern_shifter_low(i)(7);
                 selected_sprite_attribute <= sprite_attribute(i);
                 
-                if(sprite_zero_exist = '1' and i = 0 and not(selected_background_pattern = zero2)) then
+                if(sprite_zero_exist = '1' and i = 0 and selected_background_pattern /= zero2) then
                     set_sprite_zero <= '1';
                 end if;
             end if;
         end loop;
-                    
-        -- Outputs palette offset to palette memory
+
+        -- Palette offset for palette memory
         palette_index <= (others => '0') when selected_background_pattern = zero2 and selected_sprite_pattern = zero2 else
                          '1' & selected_sprite_attribute(1 downto 0) & selected_sprite_pattern when selected_background_pattern = zero2 or (selected_sprite_pattern /= zero2 and selected_sprite_attribute(5) = '0') else
                          '0' & selected_background_attribute & selected_background_pattern;        
@@ -261,8 +260,8 @@ begin
                 byte_counter <= 0;
             else
                 -- Master clock tick
-                clk_counter <= clk_counter + 1 when clk_counter < 11 else
-                               0;
+                clk_counter <= 0 when clk_counter = 11 else
+                               clk_counter + 1;
             
                 -- CPU tick
                 if(clk_counter = 5 and CS = '1') then 
@@ -376,10 +375,11 @@ begin
                 OAM_secondary_address <= OAM_secondary_address + 1 when OAM_secondary_address_increment = '1' else
                                          (others => '0') when OAM_secondary_address_reset = '1';
                 
-                byte_counter <= byte_counter + 1 when byte_counter_increment = '1';
+                byte_counter <= 0 when byte_counter_reset = '1' or (byte_counter_increment = '1' and byte_counter = 3) else
+                                byte_counter + 1 when byte_counter_increment = '1';
                 
-                sprite_counter <= sprite_counter + 1 when sprite_counter_increment = '1' else
-                                0 when sprite_counter_reset = '1';
+                sprite_counter <= 0 when sprite_counter_reset = '1' or (sprite_counter_increment = '1' and sprite_counter = 7) else
+                                  sprite_counter + 1 when sprite_counter_increment = '1';
                                 
                 sprite_evaluation_active <= '1' when start_sprite_evaluation = '1' else
                                             '0' when stop_sprite_evaluation = '1';
@@ -394,13 +394,20 @@ begin
                 
                 sprite_y_register <= OAM_secondary_data when fill_sprite_y_register = '1';
                 sprite_tile_register <= OAM_secondary_data when fill_sprite_tile_register = '1';
+                
                 for i in 0 to 7 loop
                     sprite_attribute(i) <= OAM_secondary_data when fill_sprite_attribute(i) = '1';
-                    sprite_x_counter(i) <= OAM_secondary_data when fill_sprite_x_counter(i) = '1';
+                    
+                    sprite_x_counter(i) <= OAM_secondary_data when fill_sprite_x_counter(i) = '1' else
+                                           sprite_x_counter(i) - 1 when move_sprite_shift_registers = '1' and  sprite_x_counter(i) /= zero8;
+                                           
                     sprite_pattern_shifter_low(i) <= VRAM_data when fill_sprite_pattern_shifter_low(i) = '1' and sprite_attribute(i)(6) = '0' else
-                                                     VRAM_data_reversed when fill_sprite_pattern_shifter_low(i) = '1' and sprite_attribute(i)(6) = '1';
+                                                     VRAM_data_reversed when fill_sprite_pattern_shifter_low(i) = '1' and sprite_attribute(i)(6) = '1' else
+                                                     sprite_pattern_shifter_low(i)(6 downto 0) & '0' when move_sprite_shift_registers  = '1' and sprite_x_counter(i) = zero8;
+                
                     sprite_pattern_shifter_high(i) <= VRAM_data when fill_sprite_pattern_shifter_high(i) = '1' and sprite_attribute(i)(6) = '0' else
-                                                      VRAM_data_reversed when fill_sprite_pattern_shifter_low(i) = '1' and sprite_attribute(i)(6) = '1';
+                                                      VRAM_data_reversed when fill_sprite_pattern_shifter_low(i) = '1' and sprite_attribute(i)(6) = '1' else
+                                                      sprite_pattern_shifter_high(i)(6 downto 0) & '0' when move_sprite_shift_registers  = '1' and sprite_x_counter(i) = zero8;
                 end loop;
                                 
                 v <= coarse_x_increment(v) when increment_horizontal_v = '1' else
@@ -408,7 +415,7 @@ begin
                      v(14 downto 11) & t(10) & v(9 downto 5) & t(4 downto 0) when set_horizontal_v = '1' else
                      t(14 downto 11) & v(10) & t(9 downto 5) & v(4 downto 0) when set_vertical_v = '1';
                 
-                if(move_shift_registers) then
+                if(move_background_shift_registers) then
                     background_pattern_shifter_low <= background_pattern_shifter_low(14 downto 7) & low_pattern_register when reload_shift_registers else
                                                       background_pattern_shifter_low(14 downto 0) & '0';
                     background_pattern_shifter_high <= background_pattern_shifter_high(14 downto 7) & high_pattern_register when reload_shift_registers else
@@ -418,14 +425,8 @@ begin
                                                         background_attribute_shifter_low(7 downto 0) & background_attribute_shifter_low(0);
                     background_attribute_shifter_high <= background_attribute_shifter_high(7 downto 0) & attribute_register(1) when reload_shift_registers else
                                                          background_attribute_shifter_high(7 downto 0) & background_attribute_shifter_high(0);
-                                                     
-                    for i in 0 to 7 loop
-                        sprite_x_counter(i) <= sprite_x_counter(i) - 1 when sprite_x_counter(i) /= zero8;
-                        sprite_pattern_shifter_low(i) <= sprite_pattern_shifter_low(i)(6 downto 0) & '0' when sprite_x_counter(i) = zero8;
-                        sprite_pattern_shifter_high(i) <= sprite_pattern_shifter_high(i)(6 downto 0) & '0' when sprite_x_counter(i) = zero8;
-                    end loop;
                 end if;
-                                
+                
                 if(line_counter = pre_render_line and cycle_counter = last_cycle and odd_frame_flag = '1') then
                     cycle_counter <= 1;
                     line_counter <= 0;
@@ -435,8 +436,9 @@ begin
                     line_counter <= 0;
                     odd_frame_flag <= '1';
                 else
-                    cycle_counter <= cycle_counter + 1;
-                    line_counter <= line_counter + 1 when cycle_counter = 340;
+                    cycle_counter <= 0 when cycle_counter = last_cycle else
+                                     cycle_counter + 1;
+                    line_counter <= line_counter + 1 when cycle_counter = last_cycle;
                 end if;
             end if;  
         end if;
@@ -444,8 +446,10 @@ begin
     
     -- Renderer Decoder
     process(ALL) 
-        variable render_lines, fetch_cycles, shift_cycles, sprite_cycles, frame_start, horizontal_start  : boolean;
-        variable secondary_oam_clear_cycles, sprite_evaluation_cycles, first_sprite_evaluation_cycles    : boolean;
+        variable render_lines, fetch_cycles, background_shift_cycles, sprite_shift_cycles, sprite_cycles : boolean;
+        variable frame_start, horizontal_start                                                           : boolean;
+        variable secondary_oam_clear_cycles, last_secondary_oam_clear_cycle                              : boolean;
+        variable sprite_evaluation_cycles, first_sprite_evaluation_cycle                                 : boolean;
         variable vertical_increment_cycle, vertical_set_cycles, horizontal_set_cycle                     : boolean;
         variable vblank_set_cycle, flag_clr_cycle                                                        : boolean;
         
@@ -455,13 +459,15 @@ begin
         -- Helper Signals
         render_lines                   := ((0 <= line_counter) and (line_counter <= 239)) or line_counter = pre_render_line;
         frame_start                    := line_counter = 0 and cycle_counter = 2;
-        horizontal_start               := cycle_counter = 2;
+        horizontal_start               := line_counter /= pre_render_line and cycle_counter = 2;
         fetch_cycles                   := ((1 <= cycle_counter) and (cycle_counter <= 340));
-        shift_cycles                   := ((2 <= cycle_counter) and (cycle_counter <= 257)) or ((322 <= cycle_counter) and (cycle_counter <= 337));
+        background_shift_cycles        := ((2 <= cycle_counter) and (cycle_counter <= 257)) or ((322 <= cycle_counter) and (cycle_counter <= 337));
+        sprite_shift_cycles            := (2 <= cycle_counter) and (cycle_counter <= 257);
         sprite_cycles                  := (257 <= cycle_counter) and (cycle_counter <= 320);
         secondary_oam_clear_cycles     := line_counter /= pre_render_line and (1 <= cycle_counter) and (cycle_counter <= 64);
+        last_secondary_oam_clear_cycle := cycle_counter = 64;
         sprite_evaluation_cycles       := line_counter /= pre_render_line and (65 <= cycle_counter) and (cycle_counter <= 256);
-        first_sprite_evaluation_cycles := line_counter /= pre_render_line and cycle_counter = 65;
+        first_sprite_evaluation_cycle  := line_counter /= pre_render_line and cycle_counter = 65;
         vertical_increment_cycle       := cycle_counter = 256;
         vertical_set_cycles            := line_counter = pre_render_line and (280 <= cycle_counter) and (cycle_counter <= 304);
         horizontal_set_cycle           := cycle_counter = 257;
@@ -471,7 +477,7 @@ begin
         sprite_length := 8 when PPUCTRL(5) = '0' else
                          16;
                          
-        tile_y_offset := conv_std_logic_vector(line_counter - conv_integer(unsigned(sprite_y_register)), tile_y_offset'length) when sprite_attribute(sprite_counter)(7) = '1' else
+        tile_y_offset := conv_std_logic_vector(line_counter - conv_integer(unsigned(sprite_y_register)), tile_y_offset'length) when sprite_attribute(sprite_counter)(7) = '0' else
                          conv_std_logic_vector(sprite_length + conv_integer(unsigned(sprite_y_register)) - line_counter - 1, tile_y_offset'length);
 
         -- Default Signals
@@ -494,57 +500,39 @@ begin
             fill_sprite_pattern_shifter_low(i) <= '0'; fill_sprite_pattern_shifter_high(i) <= '0'; fill_sprite_x_counter(i) <= '0'; fill_sprite_attribute(i) <= '0';
         end loop;
         increment_horizontal_v <= '0'; increment_vertical_v <= '0'; set_horizontal_v <= '0'; set_vertical_v <= '0';
-        move_shift_registers <= '0'; reload_shift_registers <= '0';
+        move_background_shift_registers <= '0'; move_sprite_shift_registers <= '0'; reload_shift_registers <= '0';
         
         OAM_address_increment <= '0'; OAM_address_increment_4 <= '0'; OAM_address_increment_5 <= '0'; OAM_address_reset <= '0';
         OAM_secondary_address_increment <= '0'; OAM_secondary_address_reset <= '0';
-        byte_counter_increment <= '0'; sprite_counter_increment <= '0'; sprite_counter_reset <= '0';
+        byte_counter_increment <= '0'; byte_counter_reset <= '0'; sprite_counter_increment <= '0'; sprite_counter_reset <= '0';
         start_sprite_evaluation <= '0'; stop_sprite_evaluation <= '0';
         
         -- Decoder Logic
         if(vblank_set_cycle) then
             set_vertical_blank <= '1';
+        elsif(flag_clr_cycle) then
+            clr_sprite_overflow <= '1';
+            clr_sprite_zero <= '1';
+            clr_vertical_blank <= '1';
         elsif(render_lines and (PPUMASK(3) = '1' or PPUMASK(4) = '1')) then     
             rendering_active <= '1';
             
-            if(cycle_counter = 0) then
-                OAM_secondary_address_reset <= '1';
-            elsif(cycle_counter = 320) then
-                OAM_address_reset <= '1';
-            end if;
+            frame_start_signal <= '1' when frame_start;
+            horizontal_start_signal <= '1' when horizontal_start;
             
-            if(frame_start) then
-                frame_start_signal <= '1';
-            end if;
-            
-            if(horizontal_start) then
-                horizontal_start_signal <= '1';
-            end if;
-
-            if(flag_clr_cycle) then
-                clr_sprite_overflow <= '1';
-                clr_sprite_zero <= '1';
-                clr_vertical_blank <= '1';
-            end if;
-        
-            if(vertical_set_cycles) then
-                set_vertical_v <= '1';
-            end if;
-           
-            if(fetch_cycles) then          
-                if(horizontal_set_cycle) then
-                    set_horizontal_v <= '1';
-                end if;
+            OAM_secondary_address_reset <= '1' when cycle_counter = 0;
+            OAM_address_reset <= '1' when sprite_cycles;
+            set_vertical_v <= '1' when vertical_set_cycles;
+            set_horizontal_v <= '1' when horizontal_set_cycle;
+            move_background_shift_registers <= '1' when background_shift_cycles;
+            move_sprite_shift_registers <= '1' when sprite_shift_cycles;
                 
-                if(shift_cycles) then
-                    move_shift_registers <= '1';
-                end if;
-            
+            if(fetch_cycles) then
                 case conv_std_logic_vector(cycle_counter-1, 3) is
                     when "000" => -- Nametable fetch, sprite y coordinate fetch
                         VRAM_address_out <= "10" & v(11 downto 0);
                         fill_nametable_register <= '1';
-                        if(shift_cycles) then
+                        if(background_shift_cycles) then
                             reload_shift_registers <= '1';
                         end if;
                         if(sprite_cycles) then
@@ -583,7 +571,7 @@ begin
                         end if;
                         
                     when "101" => 
-                        -- Not necessary because RAM access take 1 cycle for this implementation (2 cycle on real PPU)
+                        -- Not necessary because RAM access take 1 cycle for this implementation (2 cycle on real NES)
                     
                     when "110" => -- Background high pattern fetch, sprite high pattern fetch
                         if(sprite_cycles) then
@@ -611,39 +599,43 @@ begin
                 if(secondary_oam_clear_cycles) then 
                     OAM_secondary_r_nw <= '0';
                     OAM_secondary_data <= x"FF";
-                    OAM_secondary_address_increment <= '1';
-                    clr_sprite_zero_exist <= '1';
-                    sprite_counter_reset <= '1';
+                    
+                    if(last_secondary_oam_clear_cycle) then
+                        OAM_secondary_address_reset <= '1';
+                        clr_sprite_zero_exist <= '1';
+                        byte_counter_reset <= '1';
+                        sprite_counter_reset <= '1';
+                        start_sprite_evaluation <= '1';
+                    else
+                        OAM_secondary_address_increment <= '1';
+                    end if;
                 end if;
                 
-                if(sprite_evaluation_cycles) then                                     
-                    if(not first_sprite_evaluation_cycles and OAMADDR < previous_OAMADDR) then 
-                        stop_sprite_evaluation <= '1';
-                    end if;
-                    
+                if(sprite_evaluation_cycles) then                                
                     if(sprite_evaluation_active = '1') then
-                        if((byte_counter = 0 and (OAM_data <= line_counter) and (line_counter < OAM_data + sprite_length)) or byte_counter /= 0) then
-                            if(sprite_counter < 8) then
-                                if(first_sprite_evaluation_cycles) then
-                                    set_sprite_zero_exist <= '1';
-                                end if;
-                            
-                                sprite_counter_increment <= '1' when byte_counter = 3;
-                                
-                                OAM_secondary_r_nw <= '0';
-                                OAM_secondary_data <= OAM_data;
-                                OAM_address_increment <= '1';
-                                OAM_secondary_address_increment <= '1';
-                                byte_counter_increment <= '1';
-                            else
-                                set_sprite_overflow <= '1';
-                                stop_sprite_evaluation <= '1';
-                            end if;
+                        if(not first_sprite_evaluation_cycle and OAMADDR < previous_OAMADDR) then 
+                            stop_sprite_evaluation <= '1';
                         else
-                            if(sprite_counter < 8) then
-                                OAM_address_increment_4 <= '1';
+                            if((byte_counter = 0 and (OAM_data <= line_counter) and (line_counter < OAM_data + sprite_length)) or byte_counter /= 0) then
+                                if(sprite_counter < 8) then
+                                    set_sprite_zero_exist <= '1' when first_sprite_evaluation_cycle;
+                                    sprite_counter_increment <= '1' when byte_counter = 3;
+                                    
+                                    OAM_secondary_r_nw <= '0';
+                                    OAM_secondary_data <= OAM_data;
+                                    OAM_address_increment <= '1';
+                                    OAM_secondary_address_increment <= '1';
+                                    byte_counter_increment <= '1';
+                                else
+                                    set_sprite_overflow <= '1';
+                                    stop_sprite_evaluation <= '1';
+                                end if;
                             else
-                                OAM_address_increment_5 <= '1'; -- Glitchy increment (Hardware Bug)
+                                if(sprite_counter < 8) then
+                                    OAM_address_increment_4 <= '1';
+                                else
+                                    OAM_address_increment_5 <= '1'; -- Glitchy increment (Hardware Bug)
+                                end if;
                             end if;
                         end if;
                     else
