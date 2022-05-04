@@ -33,7 +33,7 @@ entity Decoder is
         SB_ADH, SB_DB, FA_ADL, FB_ADL, FC_ADL                : out std_logic;
         FD_ADL, FE_ADL, FF_ADL, S_ADL, ZERO_S, SB_S          : out std_logic;
         D_S, I_S, S_SB, NDB_ADD, DB_ADD, ADL_ADD, ONE_ADDC   : out std_logic;
-        DAA, DSA, SUMS, ANDS, EORS, ORS, SRS, RRS, RLS       : out std_logic;
+        DAA, DSA, SUMS, ANDS, EORS, ORS, SRS                 : out std_logic;
         ADD_ADL, ADD_ADH, ADD_SB, FF_ADD                     : out std_logic;
         ZERO_ADD, SB_ADD, SB_AC, DB_SB, ADH_SB               : out std_logic;
         AC_DB, AC_SB, SB_X, X_SB, SB_Y, Y_SB                 : out std_logic;
@@ -243,7 +243,7 @@ begin
         SB_ADH<='0'; SB_DB<='0'; FA_ADL<='0'; FB_ADL<='0'; FC_ADL<='0';
         FD_ADL<='0'; FE_ADL<='0'; FF_ADL<='0'; S_ADL<='0'; ZERO_S<='0'; SB_S<='0'; 
         D_S<='0'; I_S<='0'; S_SB<='0'; NDB_ADD<='0'; DB_ADD<='0'; ADL_ADD<='0'; ONE_ADDC<='0';
-        DAA<='0'; DSA<='0'; SUMS<='0'; ANDS<='0'; EORS<='0'; ORS<='0'; SRS<='0'; RRS<='0'; RLS<='0';
+        DAA<='0'; DSA<='0'; SUMS<='0'; ANDS<='0'; EORS<='0'; ORS<='0'; SRS<='0';
         ADD_ADL<='0'; ADD_ADH<='0'; ADD_SB<='0'; FF_ADD<='0';
         ZERO_ADD<='0'; SB_ADD<='0'; SB_AC<='0'; DB_SB<='0'; ADH_SB<='0';
         AC_DB<='0'; AC_SB<='0'; SB_X<='0'; X_SB<='0'; SB_Y<='0'; Y_SB<='0';
@@ -1523,7 +1523,7 @@ begin
             case cycle is
                 when 0 =>
                     cycle_increment<= '1';    
-                    ZERO_D<= '1';                                                -- Clear carry flag
+                    ZERO_D<= '1';                                                -- Clear decimal flag
                     
                 when 1 =>   
                     cycle_reset<= '1';
@@ -3820,8 +3820,8 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<= '1';
-                        AC_SB<='1'; SB_ADD<='1'; RLS<='1';    -- Rotate left accumulator
-                        ACR_C<='1';                           -- Set C flag
+                        AC_SB<='1'; SB_ADD<='1'; SB_DB<='1'; DB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(0);   -- Rotate left accumulator
+                        ACR_C<='1';                                                                    -- Set C flag
                         
                     when 1 =>
                         cycle_reset<= '1';                                         
@@ -3842,9 +3842,9 @@ begin
                         
                     when 1 =>
                         cycle_increment<= '1'; 
-                        DL_ADL<= '1'; ZERO_ADH<= '1'; ADL_ABL<='1'; ADH_ABH<='1';           -- send data latch to low address bus, send zero to high address bus
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RLS<='1';                      -- Rotate left memory
-                        ACR_C<='1';                                                         -- Set C flag
+                        DL_ADL<= '1'; ZERO_ADH<= '1'; ADL_ABL<='1'; ADH_ABH<='1';                      -- send data latch to low address bus, send zero to high address bus
+                        DL_DB<='1'; DB_ADD<='1'; DB_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(1);   -- Rotate left memory
+                        ACR_C<='1';                                                                    -- Set C flag
                         
                     when 2 =>
                         cycle_increment<= '1';                                         
@@ -3873,9 +3873,9 @@ begin
                         
                     when 1 =>
                         cycle_increment<= '1';
-                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';        -- Send Add register to low address bus, send zero to high address bus     
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RLS<='1';                      -- Rotate left memory
-                        ACR_C<='1';                                                         -- Set C flag
+                        ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';                   -- Send Add register to low address bus, send zero to high address bus     
+                        DL_DB<='1'; DB_ADD<='1'; DB_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(1);   -- Rotate left memory
+                        ACR_C<='1';                                                                    -- Set C flag
                         
                     when 2 =>
                         cycle_increment<= '1';
@@ -3913,9 +3913,9 @@ begin
                             
                     when 2 =>   
                         cycle_increment<= '1';  
-                        ADD_ADL<= '1'; ADL_ABL<= '1'; DL_ADH<= '1'; ADH_ABH<= '1';          -- Send Add register to low address bus, send DL to high address bus
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RLS<='1';                      -- Rotate left memory
-                        ACR_C<='1';                                                         -- Set C flag
+                        ADD_ADL<= '1'; ADL_ABL<= '1'; DL_ADH<= '1'; ADH_ABH<= '1';                      -- Send Add register to low address bus, send DL to high address bus
+                        DL_DB<='1'; DB_ADD<='1'; DB_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(1);    -- Rotate left memory
+                        ACR_C<='1';                                                                     -- Set C flag
                         
                     when 3 =>
                         cycle_increment<='1';
@@ -3961,14 +3961,14 @@ begin
                         
                     when 3 =>
                         cycle_increment<= '1';  
-                        if(ACR_FLAG = '1') then                                             -- If page crossed
-                            ADD_ADH<= '1'; ADH_ABH<= '1';                                   -- Send Add Register to High Address Bus
-                        else                                                                
-                            ADD_ADL<= '1'; ADL_ABL<= '1';                                   -- Send Add Register to Low Address Bus
-                            DL_ADH<='1'; ADH_ABH<='1';                                      -- Send DL to High Address Bus
+                        if(ACR_FLAG = '1') then                                                        -- If page crossed
+                            ADD_ADH<= '1'; ADH_ABH<= '1';                                              -- Send Add Register to High Address Bus
+                        else                                                                           
+                            ADD_ADL<= '1'; ADL_ABL<= '1';                                              -- Send Add Register to Low Address Bus
+                            DL_ADH<='1'; ADH_ABH<='1';                                                 -- Send DL to High Address Bus
                         end if;
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RLS<='1';                      -- Rotate left memory
-                        ACR_C<='1';                                                         -- Set C flag
+                        DL_DB<='1'; DB_ADD<='1'; DB_SB<='1'; SB_ADD<='1'; SUMS<='1'; ONE_ADDC<=P(1);   -- Rotate left memory
+                        ACR_C<='1';                                                                    -- Set C flag
                     
                     when 4 =>
                         cycle_increment<='1';
@@ -3993,8 +3993,8 @@ begin
                 case cycle is
                     when 0 =>
                         cycle_increment<= '1';
-                        AC_SB<='1'; SB_ADD<='1'; RRS<='1';    -- Rotate right accumulator
-                        ACR_C<='1';                           -- Set C flag
+                        AC_SB<='1'; SB_ADD<='1'; SRS<='1'; ONE_ADDC<=P(0);   -- Rotate right accumulator
+                        ACR_C<='1';                                          -- Set C flag
                         
                     when 1 =>
                         cycle_reset<= '1';                                         
@@ -4016,7 +4016,7 @@ begin
                     when 1 =>
                         cycle_increment<= '1'; 
                         DL_ADL<= '1'; ZERO_ADH<= '1'; ADL_ABL<='1'; ADH_ABH<='1';           -- send data latch to low address bus, send zero to high address bus
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RRS<='1';                      -- Rotate right memory
+                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; SRS<='1'; ONE_ADDC<=P(0);      -- Rotate right memory
                         ACR_C<='1';                                                         -- Set C flag
                         
                     when 2 =>
@@ -4047,7 +4047,7 @@ begin
                     when 1 =>
                         cycle_increment<= '1';
                         ADD_ADL<= '1'; ADL_ABL<= '1'; ZERO_ADH<= '1'; ADH_ABH<= '1';        -- Send Add register to low address bus, send zero to high address bus     
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RRS<='1';                      -- Rotate right memory
+                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; SRS<='1'; ONE_ADDC<=P(0);      -- Rotate right memory
                         ACR_C<='1';                                                         -- Set C flag
                         
                     when 2 =>
@@ -4087,7 +4087,7 @@ begin
                     when 2 =>   
                         cycle_increment<= '1';  
                         ADD_ADL<= '1'; ADL_ABL<= '1'; DL_ADH<= '1'; ADH_ABH<= '1';          -- Send Add register to low address bus, send DL to high address bus
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RRS<='1';                      -- Rotate right memory
+                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; SRS<='1'; ONE_ADDC<=P(0);      -- Rotate right memory
                         ACR_C<='1';                                                         -- Set C flag
                         
                     when 3 =>
@@ -4140,7 +4140,7 @@ begin
                             ADD_ADL<= '1'; ADL_ABL<= '1';                                   -- Send Add Register to Low Address Bus
                             DL_ADH<='1'; ADH_ABH<='1';                                      -- Send DL to High Address Bus
                         end if;
-                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; RRS<='1';                      -- Rotate right memory
+                        DL_DB<='1'; DB_SB<='1'; SB_ADD<='1'; SRS<='1'; ONE_ADDC<=P(0);      -- Rotate right memory
                         ACR_C<='1';                                                         -- Set C flag
                     
                     when 4 =>
@@ -4949,7 +4949,7 @@ begin
                          cycle_reset<= '1';                                         
                          PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
                          PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
-                         S_SB <='1'; SB_X <='1';                                    -- Send Stack P. to X Reg
+                         S_SB <='1'; SB_X <='1';                                     -- Send Stack P. to X Reg
                          SB_DB<='1'; DBZ_Z<='1'; DB7_N<='1';                         -- Set Z and N flags 
                      
                      when others =>   
@@ -4979,7 +4979,7 @@ begin
                          cycle_reset<= '1';                                         
                          PCL_ADL<='1'; ADL_ABL<='1'; PCH_ADH<='1'; ADH_ABH<='1';     -- Send PC to Addressbus
                          PCL_PCL<='1'; I_PC<='1'; PCH_PCH<='1';                      -- Increment PC
-                         X_SB <='1'; SB_S <='1';                                    -- Send X Reg to Stack P. 
+                         X_SB <='1'; SB_S <='1';                                     -- Send X Reg to Stack P. 
                      
                      when others =>   
                  end case;  
@@ -5022,7 +5022,7 @@ begin
             cycle_increment <= '0'; cycle_reset <= '0'; cycle_skip <= '0'; cycle_double_skip <= '0';
             D_DL <= '0';
             PCL_PCL <= '1'; PCH_PCH <= '1'; ADL_PCL <= '0'; ADH_PCH <= '0'; I_PC <= '0';
-            SUMS <= '0'; ANDS <= '0'; EORS <= '0'; ORS <= '0'; SRS <= '0'; RRS <='0'; RLS <= '0';
+            SUMS <= '0'; ANDS <= '0'; EORS <= '0'; ORS <= '0'; SRS <= '0';
             D_S <= '0'; I_S <= '0'; SB_S <= '0';
             SB_X <= '0'; SB_Y <= '0'; SB_AC <= '0';
             DB0_C <= '0'; ZERO_C <= '0'; ONE_C <= '0'; ACR_C <= '0'; 

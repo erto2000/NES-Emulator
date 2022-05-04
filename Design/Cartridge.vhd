@@ -30,7 +30,7 @@ begin
     PRG_memory: entity work.RAM
     generic map(
         DATA_WIDTH => 8,
-        ADDRESS_WIDTH => 15,
+        ADDRESS_WIDTH => 14,
         INITIALIZE_TYPE => 2,
         INITIALIZE_FILE_INDEX => 1
     )
@@ -38,7 +38,7 @@ begin
         clk => clk,
         WE => not CPU_r_nw,
         CS => CPU_address(15) and CS,
-        address => CPU_address(14 downto 0),
+        address => CPU_address(13 downto 0),
         data => CPU_data
     );
     

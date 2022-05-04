@@ -18,7 +18,8 @@ module tb_NES;
     assign ppu_clk = (clk_counter == 0) ? 1 : 0;
     
     initial controller = 0;
-    assign #50_000_000 controller = 8'b00100000;
+    assign #50_000_000 controller = 8'b00001000;
+    assign #70_000_000 controller = 8'b00000000;
     
     integer file;
     initial begin

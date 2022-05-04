@@ -10,7 +10,7 @@ entity ALU is
     port (
         AI                                   : in std_logic_vector(DATA_WIDTH-1 downto 0);
         BI                                   : in std_logic_vector(DATA_WIDTH-1 downto 0);
-        SUMS, ANDS, EORS, ORS, SRS, RRS, RLS : in std_logic ;   
+        SUMS, ANDS, EORS, ORS, SRS           : in std_logic ;   
         ONE_ADDC                             : in std_logic;
         AVR, ACR                             : out std_logic;
         ALU_OUT                              : out std_logic_vector(DATA_WIDTH-1 downto 0)
@@ -56,16 +56,7 @@ begin
         elsif (SRS = '1') then                                               
             ACR <= AI(0);
             alu_out_signal <= ONE_ADDC & AI(DATA_WIDTH-1 downto 1);
-        
-        -- AI rotate right
-        elsif (RRS = '1') then                                               
-            ACR <= AI(0);
-            alu_out_signal <= AI(0) & AI(DATA_WIDTH-1 downto 1);
-        
-        -- AI rotate left
-        elsif (RLS = '1') then                                               
-            ACR <= AI(DATA_WIDTH-1);
-            alu_out_signal <= AI(DATA_WIDTH-2 downto 0) & AI(DATA_WIDTH-1);
+            
         end if;    
     end process;
 end Behavioral;

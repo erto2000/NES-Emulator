@@ -69,7 +69,7 @@ architecture Behavioral of CPU is
     signal SB_ADH, SB_DB, FA_ADL, FB_ADL, FC_ADL                : std_logic;
     signal FD_ADL, FE_ADL, FF_ADL, S_ADL, ZERO_S, SB_S          : std_logic;
     signal D_S, I_S, S_SB, NDB_ADD, DB_ADD, ADL_ADD, ONE_ADDC   : std_logic;
-    signal DAA, DSA, SUMS, ANDS, EORS, ORS, SRS, RRS, RLS       : std_logic;
+    signal DAA, DSA, SUMS, ANDS, EORS, ORS, SRS                 : std_logic;
     signal ADD_ADL, ADD_ADH, ADD_SB, FF_ADD                     : std_logic;
     signal ZERO_ADD, SB_ADD, SB_AC, DB_SB, ADH_SB               : std_logic;
     signal AC_DB, AC_SB, SB_X, X_SB, SB_Y, Y_SB                 : std_logic;
@@ -185,7 +185,7 @@ begin
             AI_REG <= AI;   
             BI_REG <= BI;
             
-            ADD <= ALU_OUT when (SUMS or ANDS or EORS or ORS or SRS or RRS or RLS) = '1'; 
+            ADD <= ALU_OUT when (SUMS or ANDS or EORS or ORS or SRS) = '1'; 
             
             S <= S - 1 when D_S = '1' else
                  S + 1 when I_S = '1' else
@@ -249,8 +249,6 @@ begin
         EORS     => EORS,
         ORS      => ORS,
         SRS      => SRS,
-        RRS      => RRS,
-        RLS      => RLS,
         ONE_ADDC => ONE_ADDC,
         AVR      => AVR,
         ACR      => ACR,
@@ -350,8 +348,6 @@ begin
         EORS              => EORS,
         ORS               => ORS,
         SRS               => SRS,
-        RRS               => RRS,
-        RLS               => RLS,
         ADD_ADL           => ADD_ADL,
         ADD_ADH           => ADD_ADH,
         ADD_SB            => ADD_SB,
