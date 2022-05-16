@@ -9,7 +9,7 @@ entity NES is
     port(
         clk, rst    : in std_logic;
         controller  : in std_logic_vector(7 downto 0); -- 0-A, 1-B, 2-Select, 3-Start, 4-Up, 5-Down, 6-Left, 7-Right,
-        pixel_out   : out std_logic_vector(7 downto 0);
+        pixel_color : out std_logic_vector(23 downto 0);
         h, v        : out std_logic
     );
 end NES;
@@ -26,13 +26,11 @@ architecture Behavioral of NES is
     signal hsync, vsync : std_logic;
     signal delayed_hsync, delayed_vsync: std_logic := '0';
     signal pixel_index: std_logic_vector(7 downto 0);
-    signal pixel_color: std_logic_vector(23 downto 0);
     
     signal RAM_select, PPU_select, DMA_select, Cartridge_select, Controller_Logic_select: std_logic;
 begin
-    pixel_out <= pixel_index;
-    h <= hsync;
-    v <= vsync;
+    h <= delayed_hsync;
+    v <= delayed_vsync;
 
     RAM_select <= '1' when x"0000" <= CPU_address and CPU_address <= x"1FFF" else
                   '0';

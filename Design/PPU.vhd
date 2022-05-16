@@ -10,7 +10,7 @@ entity PPU is
         CS, r_nw        : in std_logic;
         address         : in std_logic_vector(2 downto 0);
         nmi             : out std_logic;
-        hsync, vsync    : out std_logic;
+        hsync, vsync    : out std_logic := '0';
         pixel_index     : out std_logic_vector(7 downto 0);
         VRAM_r_nw       : out std_logic;
         VRAM_address    : out std_logic_vector(13 downto 0);
