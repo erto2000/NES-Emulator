@@ -10,7 +10,7 @@ entity NES is
         clk, rst        : in std_logic;
         controller      : in std_logic_vector(7 downto 0); -- 0-A, 1-B, 2-Select, 3-Start, 4-Up, 5-Down, 6-Left, 7-Right,
         R,G,B           : out std_logic_vector(3 downto 0);
-        vga_hsync,vga_vsync   : out std_logic
+        VGA_H,VGA_V     : out std_logic
     );
 end NES;
 
@@ -30,17 +30,15 @@ architecture Behavioral of NES is
     signal RAM_select, PPU_select, DMA_select, Cartridge_select, Controller_Logic_select: std_logic;
     
     signal pixel_color : std_logic_vector(23 downto 0);
-    signal frame_pixel : std_logic_vector(11 downto 0);
     signal clk25 : std_logic;
     signal clk50 : std_logic;
     signal clk12_5 : std_logic;
-    signal clk6_75 : std_logic;
+    signal clk6_25 : std_logic;
     signal index   : std_logic_vector(19 downto 0);
     signal data_vga   : std_logic_vector(11 downto 0);
     
 begin
---    h <= delayed_hsync;
---    v <= delayed_vsync;
+
     
     RAM_select <= '1' when x"0000" <= CPU_address and CPU_address <= x"1FFF" else
                   '0';
@@ -171,7 +169,6 @@ begin
         CPU_data      => CPU_data
     );
     
-    frame_pixel <= pixel_color(23 downto 20) &  pixel_color(15 downto 12) & pixel_color(7 downto 4) ;
     VGA: entity work.VGA
     port map(
     clk             => clk25,
@@ -180,14 +177,14 @@ begin
     R               => R,
     G               => G,
     B               => B,
-    vga_hsync       => vga_hsync,
-    vga_vsync       => vga_vsync,
+    VGA_H           => VGA_H,
+    VGA_V           => VGA_V,
     data_vga        => data_vga
     );
 
     VGA_RAM: entity work.VGA_RAM
     port map(
-    clk             => clk6_75,
+    clk             => clk6_25,
     clk_2           => clk25,
     rst             => rst,
     pixel_color     => pixel_color,
@@ -205,7 +202,7 @@ begin
     clk50           => clk50,
     clk25           => clk25,
     clk12_5         => clk12_5,
-    clk6_75         => clk6_75
+    clk6_25         => clk6_25
     );
 
 end Behavioral;

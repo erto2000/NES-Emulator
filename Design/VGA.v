@@ -7,189 +7,82 @@ module VGA(
 	output reg[3:0] R,
 	output reg[3:0] G,
 	output reg[3:0] B,
-	output reg vga_hsync,
-	output reg vga_vsync,
+	output reg VGA_H,
+	output reg VGA_V,
 	input [11:0] data_vga
     );
     
-      parameter hRez   = 640;
-      parameter hStartSync   = 640+16;
-      parameter hEndSync     = 640+16+96;
-      parameter hMaxCount    = 800;
+      parameter h_start   = 640+16;
+      parameter h_end     = 640+16+96;
+      parameter h_max     = 640+16+96+48;
     
-      parameter vRez         = 480;
-      parameter vStartSync   = 480+10;
-      parameter vEndSync     = 480+10+2;
-      parameter vMaxCount    = 480+10+2+33;
+      parameter v_start   = 480+10;
+      parameter v_end     = 480+10+2;
+      parameter v_max     = 480+10+2+33;
     
-		parameter hsync_active   =0;
-		parameter vsync_active  = 0;
-		reg[9:0] hCounter;
-		reg[9:0] vCounter;    
-		reg[16:0] address;  
-		reg blank;
-		initial   hCounter = 10'b0;
-		initial   vCounter = 10'b0;  
-		initial   address = 17'b0;   
-		initial   blank = 1'b1;    
-		assign frame_addr = address;
+	  parameter h_active   = 0;
+	  parameter v_active   = 0;
+	  reg[9:0] h_coun;
+	  reg[9:0] v_coun;    
+	  reg black_screen;
+
+	  initial   black_screen = 1'b1;    
+	  initial   h_coun       = 10'b0;
+	  initial   v_coun       = 10'b0;    
 		
-		always@(posedge clk)
-    	begin
-		if( hCounter == hMaxCount-1 )
-			begin
-			hCounter <=  10'b0;
-			if (vCounter == vMaxCount-1 )
-				vCounter <=  10'b0;
-			else
-				vCounter <= vCounter+1;
-			end
-		else
-			hCounter <= hCounter+1;
-
-		if (blank ==0)
-			begin
-		        R   <= data_vga[11:8];
-                G <= data_vga[7:4];
-                B  <= data_vga[3:0];                      
-			end
-		else 
-			begin
-			R   <= 4'b0;
-			G <= 4'b0;
-			B  <= 4'b0;
-			end
-
-		if(  vCounter  >= 360 || vCounter  < 120) 
-			begin
-			index <= 20'b0; 
-			blank <= 1;
-			end
-		else
-			begin
-			if ( hCounter  < 416 && hCounter  >= 160) 
-				begin
-				blank <= 0;
-				index <= index+1;
-				end
-			else
-				blank <= 1;
-			end
-
-		if( hCounter > hStartSync && hCounter <= hEndSync)
-			vga_hsync <= hsync_active;
-		else
-			vga_hsync <= ~ hsync_active;
-
-		if( vCounter >= vStartSync && vCounter < vEndSync )
-			vga_vsync <= vsync_active;
-		else
-			vga_vsync <= ~ vsync_active;
+      always@(posedge clk)
+      begin
+        if(h_coun == h_max-1)
+        begin
+        	h_coun <=  10'b0;
+        	if (v_coun == v_max-1 )
+        		v_coun <=  10'b0;
+        	else
+        		v_coun <= v_coun+1;
+        end
+        else
+        	h_coun <= h_coun+1;
+        
+        if (black_screen ==0)
+        	begin
+                R   <= data_vga[11:8];
+                G   <= data_vga[7:4];
+                B   <= data_vga[3:0];                      
+        	end
+        else 
+        	begin
+        	R   <= 4'b0;
+        	G   <= 4'b0;
+        	B   <= 4'b0;
+        	end
+        
+        if(v_coun >= 360 || v_coun < 120) 
+        	begin
+        	index <= 20'b0; 
+        	black_screen <= 1;
+        	end
+        else
+        	begin
+        	if (h_coun < 416 && h_coun >= 160) 
+        		begin
+        		black_screen <= 0;
+        		index <= index+1;
+        		end
+        	else
+        		black_screen <= 1;
+        	end
+        
+        if(h_coun > h_start && h_coun <= h_end)
+        	VGA_H <= h_active;
+        else
+        	VGA_H <= ~ h_active;
+        
+        if(v_coun >= v_start && v_coun < v_end )
+          VGA_V <= v_active;
+        else
+        	VGA_V <= ~ v_active;
 	end 
 endmodule
 
 
 
-
-
-
-
-//`timescale 1ns / 1ps
-
-//module VGA(
-//    input clk,
-//    input rst,
-//    output reg [19:0] index,
-//	output reg[3:0] R,
-//	output reg[3:0] G,
-//	output reg[3:0] B,
-//	output reg vga_hsync,
-//	output reg vga_vsync,
-//	input [11:0] data_vga
-//    );
-    
-//      parameter hRez   = 640;
-//      parameter hStartSync   = 640+16;
-//      parameter hEndSync     = 640+16+96;
-//      parameter hMaxCount    = 800;
-    
-//      parameter vRez         = 400;
-//      parameter vStartSync   = 400+12;
-//      parameter vEndSync     = 400+12+2;
-//      parameter vMaxCount    = 400+12+2+35; //449
-    
-//		parameter hsync_active   =0;
-//		parameter vsync_active  = 0;
-//		reg[9:0] hCounter;
-//		reg[9:0] vCounter;    
-//		reg[16:0] address;  
-//		reg blank;
-//		initial   hCounter = 10'b0;
-//		initial   vCounter = 10'b0;  
-//		initial   address = 17'b0;   
-//		initial   blank = 1'b1;    
-//		assign frame_addr = address;
-		
-//		always@(posedge clk)
-//		begin
-//		if( hCounter == hMaxCount-1 )
-//			begin
-//			hCounter <=  10'b0;
-//            index <= index + 1;
-//			if (vCounter == vMaxCount-1 ) begin
-//				vCounter <=  10'b0;
-//				index <= 20'b0;
-//		    end
-//			else
-//			    index <= index + 1;
-//				vCounter <= vCounter+1;
-//			end
-//		else begin
-//			hCounter <= hCounter+1;
-//			index <= index + 1;
-//        end
-
-//		 R   <= data_vga[11:8];
-//         G   <= data_vga[7:4];
-//         B   <= data_vga[3:0]; 
-          
-////		if (blank ==0)
-////			begin
-////		        R   <= data_vga[11:8];
-////                G <= data_vga[7:4];
-////                B  <= data_vga[3:0];                      
-////			end
-////		else 
-////			begin
-////			R   <= 4'b0;
-////			G <= 4'b0;
-////			B  <= 4'b0;
-////			end
-
-////		if(  vCounter  >= 360 || vCounter  < 120) 
-////			begin
-////			address <= 17'b0; 
-////			blank <= 1;
-////			end
-////		else
-////			begin
-////			if ( hCounter  < 480 && hCounter  >= 160) 
-////				begin
-////				blank <= 0;
-////				address <= address+1;
-////				end
-////			else
-////				blank <= 1;
-////			end
-
-//		if( hCounter > hStartSync && hCounter <= hEndSync)
-//			vga_hsync <= hsync_active;
-//		else
-//			vga_hsync <= ~ hsync_active;
-
-//		if( vCounter >= vStartSync && vCounter < vEndSync )
-//			vga_vsync <= vsync_active;
-//		else
-//			vga_vsync <= ~ vsync_active;
-//		end 
-//endmodule
