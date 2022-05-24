@@ -8,9 +8,7 @@ use IEEE.Std_Logic_TextIO.all;
 entity NES is
     port(
         clk, rst    : in std_logic;
-        controller  : in std_logic_vector(7 downto 0); -- 0-A, 1-B, 2-Select, 3-Start, 4-Up, 5-Down, 6-Left, 7-Right,
-        pixel_color : out std_logic_vector(23 downto 0);
-        h, v        : out std_logic
+        controller  : in std_logic_vector(7 downto 0) -- 0-A, 1-B, 2-Select, 3-Start, 4-Up, 5-Down, 6-Left, 7-Right,
     );
 end NES;
 
@@ -23,15 +21,13 @@ architecture Behavioral of NES is
     signal VRAM_CS, VRAM_A10, VRAM_r_nw : std_logic;
     signal VRAM_address: std_logic_vector(13 downto 0);
     signal VRAM_data: std_logic_vector(7 downto 0);
-    signal hsync, vsync : std_logic;
-    signal delayed_hsync, delayed_vsync: std_logic := '0';
+    signal frame_start, horizontal_start: std_logic;
+    signal delayed_frame_start, delayed_horizontal_start: std_logic := '0';
     signal pixel_index: std_logic_vector(7 downto 0);
+    signal pixel_color: std_logic_vector(23 downto 0);
     
     signal RAM_select, PPU_select, DMA_select, Cartridge_select, Controller_Logic_select: std_logic;
 begin
-    h <= delayed_hsync;
-    v <= delayed_vsync;
-
     RAM_select <= '1' when x"0000" <= CPU_address and CPU_address <= x"1FFF" else
                   '0';
                   
@@ -47,8 +43,8 @@ begin
     Controller_Logic_select <= '1' when CPU_address = x"4016" or CPU_address = x"4017" else
                                '0';
     
-    delayed_hsync <= hsync when rising_edge(clk);
-    delayed_vsync <= vsync when rising_edge(clk);
+    delayed_frame_start <= frame_start when rising_edge(clk);
+    delayed_horizontal_start <= horizontal_start when rising_edge(clk);
     
     CPU: entity work.CPU
     port map(
@@ -80,19 +76,19 @@ begin
     
     PPU: entity work.PPU
     port map(
-        clk             => clk,
-        rst             => rst,
-        CS              => PPU_select,
-        r_nw            => CPU_r_nw,         
-        address         => CPU_address(2 downto 0),      
-        nmi             => nmi,                
-        hsync           => hsync,      
-        vsync           => vsync,
-        pixel_index     => pixel_index, 
-        VRAM_r_nw       => VRAM_r_nw,    
-        VRAM_address    => VRAM_address, 
-        VRAM_data       => VRAM_data,    
-        data            => CPU_data
+        clk                 => clk,
+        rst                 => rst,
+        CS                  => PPU_select,
+        r_nw                => CPU_r_nw,         
+        address             => CPU_address(2 downto 0),      
+        nmi                 => nmi,                
+        frame_start         => frame_start,      
+        horizontal_start    => horizontal_start,
+        pixel_index         => pixel_index, 
+        VRAM_r_nw           => VRAM_r_nw,    
+        VRAM_address        => VRAM_address, 
+        VRAM_data           => VRAM_data,    
+        data                => CPU_data
     );
 
     PPU_Nametable: entity work.RAM

@@ -6,16 +6,17 @@ use IEEE.std_logic_misc.and_reduce;
 
 entity PPU is
     port(
-        clk, rst        : in std_logic;
-        CS, r_nw        : in std_logic;
-        address         : in std_logic_vector(2 downto 0);
-        nmi             : out std_logic;
-        hsync, vsync    : out std_logic := '0';
-        pixel_index     : out std_logic_vector(7 downto 0);
-        VRAM_r_nw       : out std_logic;
-        VRAM_address    : out std_logic_vector(13 downto 0);
-        VRAM_data       : inout std_logic_vector(7 downto 0);
-        data            : inout std_logic_vector(7 downto 0)
+        clk, rst            : in std_logic;
+        CS, r_nw            : in std_logic;
+        address             : in std_logic_vector(2 downto 0);
+        nmi                 : out std_logic;
+        frame_start         : out std_logic := '0';
+        horizontal_start    : out std_logic := '0';
+        pixel_index         : out std_logic_vector(7 downto 0);
+        VRAM_r_nw           : out std_logic;
+        VRAM_address        : out std_logic_vector(13 downto 0);
+        VRAM_data           : inout std_logic_vector(7 downto 0);
+        data                : inout std_logic_vector(7 downto 0)
     );
 end PPU;
 
@@ -353,8 +354,8 @@ begin
             -- PPU ticks
             if(clk_counter = 3 or clk_counter = 7 or clk_counter = 11) then 
                 pixel_index <= palette_data;
-                vsync <= frame_start_signal;
-                hsync <= horizontal_start_signal;
+                frame_start <= frame_start_signal;
+                horizontal_start <= horizontal_start_signal;
             
                 PPUSTATUS(5) <= '1' when set_sprite_overflow = '1' else
                                 '0' when clr_sprite_overflow = '1';
