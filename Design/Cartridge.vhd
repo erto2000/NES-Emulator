@@ -8,14 +8,14 @@ entity Cartridge is
         DATA_WIDTH: integer := 8
     );
     port(
-        rst, clk        : in std_logic;
-        CS, irq         : in std_logic;
+        rst, clk, CS    : in std_logic;
         CPU_r_nw        : in std_logic;
         CPU_address     : in std_logic_vector(DATA_WIDTH*2-1 downto 0);
         PPU_r_nw        : in std_logic;
         PPU_address     : in std_logic_vector(13 downto 0);
         VRAM_CS         : out std_logic;
         VRAM_A10        : out std_logic;
+        irq             : out std_logic;
         CPU_data        : inout std_logic_vector(DATA_WIDTH-1 downto 0);
         PPU_data        : inout std_logic_vector(7 downto 0)
     );
@@ -26,6 +26,7 @@ architecture Behavioral of Cartridge is
 begin
     VRAM_CS <= PPU_address(13);
     VRAM_A10 <= '0'; --PPU_address(10); -- Based on file
+    irq <= '1';
 
     PRG_memory: entity work.RAM
     generic map(

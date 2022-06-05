@@ -6,7 +6,7 @@ module tb_NES;
     reg[3:0] R,G,B;
     wire vga_hsync, vga_vsync;
     
-    NES UUT(.clk(clk), .rst(0), .R(R), .G(G), .B(B), .vga_hsync(vga_hsync),. vga_vsync(vga_vsync));
+    NES UUT(.clk(clk), .rst(rst), .R(R), .G(G), .B(B), .vga_h(vga_h),. vga_v(vga_v));
     
     always #10 clk = ~clk;
 

@@ -23,24 +23,20 @@ architecture Behavioral of NES is
     signal VRAM_CS, VRAM_A10, VRAM_r_nw : std_logic;
     signal VRAM_address: std_logic_vector(13 downto 0);
     signal VRAM_data: std_logic_vector(7 downto 0);
-    signal frame_start, horizontal_start: std_logic;
-    signal delayed_frame_start, delayed_horizontal_start: std_logic := '0';
+    signal vsync, hsync: std_logic;
+    signal delayed_vsync, delayed_hsync: std_logic := '0';
     signal pixel_index: std_logic_vector(7 downto 0);
     signal pixel_color: std_logic_vector(23 downto 0);
     
     signal RAM_select, PPU_select, DMA_select, Cartridge_select, Controller_Logic_select: std_logic;
     
-    signal pixel_color : std_logic_vector(23 downto 0);
     signal clk25 : std_logic;
     signal clk50 : std_logic;
     signal clk12_5 : std_logic;
     signal clk6_25 : std_logic;
     signal index   : std_logic_vector(19 downto 0);
     signal data_vga   : std_logic_vector(11 downto 0);
-    
 begin
-
-    
     RAM_select <= '1' when x"0000" <= CPU_address and CPU_address <= x"1FFF" else
                   '0';
                   
@@ -55,9 +51,6 @@ begin
                         
     Controller_Logic_select <= '1' when CPU_address = x"4016" or CPU_address = x"4017" else
                                '0';
-    
-    delayed_hsync <= hsync when rising_edge(clk25);
-    delayed_vsync <= vsync when rising_edge(clk25);
     
     CPU: entity work.CPU
     port map(

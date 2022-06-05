@@ -10,8 +10,8 @@ entity PPU is
         CS, r_nw            : in std_logic;
         address             : in std_logic_vector(2 downto 0);
         nmi                 : out std_logic;
-        frame_start         : out std_logic := '0';
-        horizontal_start    : out std_logic := '0';
+        vsync               : out std_logic := '0';
+        hsync               : out std_logic := '0';
         pixel_index         : out std_logic_vector(7 downto 0);
         VRAM_r_nw           : out std_logic;
         VRAM_address        : out std_logic_vector(13 downto 0);
@@ -69,7 +69,7 @@ architecture Behavioral of PPU is
     
     -- Internal signals
     signal palette_address_selected      : std_logic;
-    signal VRAM_data_reversed            : std_logic_vector(0 to 7);
+    signal VRAM_data_reversed            : std_logic_vector(7 downto 0);
     signal VRAM_address_out              : std_logic_vector(13 downto 0);
     signal OAM_r_nw                      : std_logic;
     signal OAM_data                      : std_logic_vector(7 downto 0);
@@ -172,12 +172,18 @@ begin
         data <= (others => 'Z');
         VRAM_r_nw <= '1';
         VRAM_data <= (others => 'Z');
-        VRAM_data_reversed <= VRAM_data; -- Assign reverse of VRAM_data (indexes are reversed look to declerations)        
         VRAM_address <= VRAM_address_out;
         OAM_r_nw <= '1';
         OAM_data <= (others => 'Z');
         palette_r_nw <= '1';
         palette_data <= (others => 'Z');
+        selected_sprite_pattern <= (others => '0');
+        selected_sprite_attribute <= (others => '0');
+        set_sprite_zero <= '0';
+        
+        for i in 0 to 7 loop
+            VRAM_data_reversed(i) <= VRAM_data(7 - i);
+        end loop;
 
         palette_address <= '0' & palette_index(3 downto 2) & "00" when palette_index(4) = '1' and palette_index(1 downto 0) = "00" else
                            palette_index;
@@ -219,9 +225,6 @@ begin
         
         -- Outputs of sprite shifters for 8 sprites
         for i in 7 downto 0 loop
-            selected_sprite_pattern <= (others => '0');
-            selected_sprite_attribute <= (others => '0');
-            set_sprite_zero <= '0';
             -- Output sprite with lowest index that is active and opaque
             if(line_counter /= 0 and sprite_x_counter(i) = zero8 and (sprite_pattern_shifter_low(i)(7) = '1' or sprite_pattern_shifter_high(i)(7) = '1')) then 
                 selected_sprite_pattern <= "00" when PPUMASK(4) = '0' or (PPUMASK(2) = '0' and 2 <= cycle_counter and cycle_counter <= 9) else
@@ -354,8 +357,8 @@ begin
             -- PPU ticks
             if(clk_counter = 3 or clk_counter = 7 or clk_counter = 11) then 
                 pixel_index <= palette_data;
-                frame_start <= frame_start_signal;
-                horizontal_start <= horizontal_start_signal;
+                vsync <= frame_start_signal;
+                hsync <= horizontal_start_signal;
             
                 PPUSTATUS(5) <= '1' when set_sprite_overflow = '1' else
                                 '0' when clr_sprite_overflow = '1';
@@ -407,7 +410,7 @@ begin
                                                      sprite_pattern_shifter_low(i)(6 downto 0) & '0' when move_sprite_shift_registers  = '1' and sprite_x_counter(i) = zero8;
                 
                     sprite_pattern_shifter_high(i) <= VRAM_data when fill_sprite_pattern_shifter_high(i) = '1' and sprite_attribute(i)(6) = '0' else
-                                                      VRAM_data_reversed when fill_sprite_pattern_shifter_low(i) = '1' and sprite_attribute(i)(6) = '1' else
+                                                      VRAM_data_reversed when fill_sprite_pattern_shifter_high(i) = '1' and sprite_attribute(i)(6) = '1' else
                                                       sprite_pattern_shifter_high(i)(6 downto 0) & '0' when move_sprite_shift_registers  = '1' and sprite_x_counter(i) = zero8;
                 end loop;
                                 
@@ -455,7 +458,7 @@ begin
         variable vblank_set_cycle, flag_clr_cycle                                                        : boolean;
         
         variable sprite_length : integer range 0 to 16;
-        variable tile_y_offset : std_logic_vector(7 downto 0);
+        variable tile_y_offset : std_logic_vector(3 downto 0);
     begin
         -- Helper Signals
         render_lines                   := ((0 <= line_counter) and (line_counter <= 239)) or line_counter = pre_render_line;
